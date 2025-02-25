@@ -1,0 +1,35 @@
+topic: Reinforcement Learning for Dynamic Difficulty in Video Games
+
+Paper 1:
+Personalized Dynamic Difficulty Adjustment - Imitation Learning Meets Reinforced Learning
+https://ieeexplore.ieee.org/document/10645659
+
+Proposes a Dynamic Difficulty Technique using a combination of imitation learning and reinforcement learning agents. Trains personalized AI opponent that adapts to the player's skill level in real-time. An imitation learning agent learns, and a reinforcement learning agent is trained to compete against the imitation agent.
+
+Potential gaps may be the limited imitation learning complexity where the learning agent uses an adaptive random forest classifier which may not capture the nuances of player behaviour compared to more complex models.
+
+source 2: 
+The use of deep learning to improve player engagement in video game through a dynamic difficulty adjustment based on skills classification
+https://www.mdpi.com/2076-3417/13/14/8249
+
+explores the use of deep learning for dynamic difficulty adjustment in a customer made video game. Focuses on classifying player skills based on gameplay data and adjusting the game's difficulty accordingly.
+
+Potential gaps might be limited technical details as the abstract does not provide specific details about the model architecture, training process, or evaluation metrics.
+
+source 3:
+Efficient Difficulty Level Balancing in Match-3 Puzzle Games: A Comparative Study Of Proximal Policy Optimization and Soft Actor-Critic Algortihms
+https://www.mdpi.com/2079-9292/12/21/4456
+
+Compares 2 reinforcement learning algortihms, proximal policy optimization and soft actor critic for difficulty level balancing in match 3 puzzle games.
+
+potential gaps may be the genre specificity as it only focuses on match 3 puzzle games that limits generalizability of the findings to other game genres.`
+
+Source 4:
+Reinforcement Learning in Game Industry—Review, Prospects and Challenges
+https://www.mdpi.com/2076-3417/13/4/2443
+
+
+
+Source 5:
+Player involvement as a result of difficulty: An introductory study to test the suitability of the motivational intensity approach to video game research
+https://pmc.ncbi.nlm.nih.gov/articles/PMC10004480/
