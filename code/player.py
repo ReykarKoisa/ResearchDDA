@@ -29,7 +29,8 @@ class Player:
             self.game.object_renderer.game_over()
             pg.display.flip()
             pg.time.delay(1500)
-            self.game.new_game()
+            self.game.level_handler.restart_level()
+
 
     def get_damage(self, damage):
         self.health -= damage

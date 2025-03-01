@@ -10,7 +10,7 @@ from object_handler import *
 from weapon import *
 from sound import *
 from pathfinding import *
-
+from level_handler import *
 
 class Game:
     def __init__(self):
@@ -22,6 +22,9 @@ class Game:
         self.global_trigger = False
         self.global_event = pg.USEREVENT + 0
         pg.time.set_timer(self.global_event, 40)
+
+       
+        self.level_handler = LevelHandler(self)  # ✅ Now safe to access `self.map.mini_map`
         self.new_game()
 
     def new_game(self):
@@ -29,11 +32,14 @@ class Game:
         self.player = Player(self)
         self.object_renderer = ObjectRenderer(self)
         self.raycasting = RayCasting(self)
-        self.object_handler = ObjectHandler(self)
+        self.object_handler = ObjectHandler(self)  # Now safe to initialize
         self.weapon = Weapon(self)
         self.sound = Sound(self)
         self.pathfinding = PathFinding(self)
+        self.level_handler.load_level()  # Load the first level
+
         pg.mixer.music.play(-1)
+
 
     def update(self):
         self.player.update()

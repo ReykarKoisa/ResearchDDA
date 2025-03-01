@@ -1,7 +1,20 @@
 import pygame as pg
 
 _ = False
-mini_map = [
+
+# Map 1: Basic Level
+LEVEL_1_MAP = [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, _, _, _, _, _, _, 1],
+    [1, _, 3, 3, 3, 3, _, 1],
+    [1, _, _, _, _, _, _, 1],
+    [1, _, _, 4, _, _, _, 1],
+    [1, _, _, _, _, _, _, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+]
+
+# Map 2: Open Space with Obstacle
+LEVEL_2_MAP = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, _, _, _, _, _, _, _, _, _, _, _, _, _, _, 1],
     [1, _, _, 3, 3, 3, 3, _, _, _, 2, 2, 2, _, _, 1],
@@ -37,10 +50,11 @@ mini_map = [
 ]
 
 
+
 class Map:
     def __init__(self, game):
         self.game = game
-        self.mini_map = mini_map
+        self.mini_map = LEVEL_1_MAP
         self.world_map = {}
         self.rows = len(self.mini_map)
         self.cols = len(self.mini_map[0])

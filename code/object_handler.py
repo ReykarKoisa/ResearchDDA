@@ -71,14 +71,40 @@ class ObjectHandler:
             pg.time.delay(1500)
             self.game.new_game()
 
-    def update(self):
-        self.npc_positions = {npc.map_pos for npc in self.npc_list if npc.alive}
-        [sprite.update() for sprite in self.sprite_list]
-        [npc.update() for npc in self.npc_list]
-        self.check_win()
+    def check_win(self):
+        if not self.npc_positions:  # Check if enemies remain
+            self.game.object_renderer.win()
+            pg.display.flip()
+            pg.time.delay(1500)
+            self.game.level_handler.next_level()
+
 
     def add_npc(self, npc):
         self.npc_list.append(npc)
 
     def add_sprite(self, sprite):
         self.sprite_list.append(sprite)
+    
+    def spawn_npc_custom(self, enemy_count):
+        from random import choices, randrange
+        self.npc_positions = set()
+        for i in range(enemy_count):
+            npc = choices(self.npc_types, self.weights)[0]
+            pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
+            while (
+                pos in self.game.map.world_map 
+                or pos in self.restricted_area 
+                or pos == self.game.player.map_pos  # ✅ Prevents NPC from spawning at player position
+            ):
+                pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
+            new_npc = npc(self.game, pos=(x + 0.5, y + 0.5))
+            self.add_npc(new_npc)
+            self.npc_positions.add(new_npc.map_pos)
+
+    
+    def update(self):
+        
+        self.npc_positions = {npc.map_pos for npc in self.npc_list if npc.alive}
+        [sprite.update() for sprite in self.sprite_list]
+        [npc.update() for npc in self.npc_list]
+        self.check_win()  # Ensure level progression when all enemies are dead
