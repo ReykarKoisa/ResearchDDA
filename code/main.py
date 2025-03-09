@@ -12,6 +12,7 @@ from sound import *
 from pathfinding import *
 from level_handler import *
 
+
 class Game:
     def __init__(self):
         pg.init()

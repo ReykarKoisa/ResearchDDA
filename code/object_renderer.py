@@ -1,6 +1,6 @@
 import pygame as pg
 from settings import *
-
+import os
 
 class ObjectRenderer:
     def __init__(self, game):
@@ -51,9 +51,21 @@ class ObjectRenderer:
 
     @staticmethod
     def get_texture(path, res=(TEXTURE_SIZE, TEXTURE_SIZE)):
-        texture = pg.image.load(path).convert_alpha()
-        return pg.transform.scale(texture, res)
+        # 1) This is the directory where object_renderer.py is located (i.e., code/).
+        base_path = os.path.dirname(__file__)
 
+        # 2) Directly join base_path + path (NO '..').
+        full_path = os.path.join(base_path, path)
+        full_path = os.path.normpath(full_path)
+
+        # 3) Check if the file actually exists.
+        if not os.path.exists(full_path):
+            raise FileNotFoundError(f"Texture file not found: {full_path}")
+
+        # 4) Load and scale the image.
+        texture = pg.image.load(full_path).convert_alpha()
+        return pg.transform.scale(texture, res)
+    
     def load_wall_textures(self):
         return {
             1: self.get_texture('resources/textures/1.png'),
