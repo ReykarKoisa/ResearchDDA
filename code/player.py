@@ -1,115 +1,226 @@
+from itertools import cycle
+from camera import Camera
 from settings import *
-import pygame as pg
-import math
+import random
 
 
-class Player:
-    def __init__(self, game):
-        self.game = game
-        self.x, self.y = PLAYER_POS
-        self.angle = PLAYER_ANGLE
-        self.shot = False
-        self.health = PLAYER_MAX_HEALTH
-        self.rel = 0
-        self.health_recovery_delay = 700
-        self.time_prev = pg.time.get_ticks()
+class PlayerAttribs:
+    def __init__(self):
+        self.health = PLAYER_INIT_HEALTH
+        self.ammo = PLAYER_INIT_AMMO
+        self.weapons = {ID.KNIFE_0: 1, ID.PISTOL_0: 0, ID.RIFLE_0: 0}
+        self.weapon_id = ID.KNIFE_0
+        self.num_level = 0
 
-    def recover_health(self):
-        if self.check_health_recovery_delay() and self.health < PLAYER_MAX_HEALTH:
-            self.health += 1
-
-    def check_health_recovery_delay(self):
-        time_now = pg.time.get_ticks()
-        if time_now - self.time_prev > self.health_recovery_delay:
-            self.time_prev = time_now
-            return True
-
-    def check_game_over(self):
-        if self.health < 1:
-            self.game.object_renderer.game_over()
-            pg.display.flip()
-            pg.time.delay(1500)
-            self.game.level_handler.restart_level()
+    def update(self, player):
+        self.health = player.health
+        self.ammo = player.ammo
+        self.weapons = player.weapons
+        self.weapon_id = player.weapon_id
 
 
-    def get_damage(self, damage):
-        self.health -= damage
-        self.game.object_renderer.player_damage()
-        self.game.sound.player_pain.play()
-        self.check_game_over()
+class Player(Camera):
+    def __init__(self, eng, position=PLAYER_POS, yaw=0, pitch=0):
+        self.app = eng.app
+        self.eng = eng
+        self.sound = eng.sound
+        self.play = eng.sound.play
+        super().__init__(position, yaw, pitch)
 
-    def single_fire_event(self, event):
+        # these maps will update when instantiated LevelMap
+        self.door_map, self.wall_map, self.item_map = None, None, None
+
+        # attribs
+        self.health = self.eng.player_attribs.health
+        self.ammo = self.eng.player_attribs.ammo
+        #
+        self.tile_pos: Tuple[int, int] = None
+
+        # weapon
+        self.weapons = self.eng.player_attribs.weapons
+        self.weapon_id = self.eng.player_attribs.weapon_id
+        self.weapon_cycle = cycle(self.eng.player_attribs.weapons.keys())
+        #
+        self.is_shot = False
+        #
+        self.key = None
+
+    def handle_events(self, event):
+        if event.type == pg.KEYDOWN:
+            # door interaction
+            if event.key == KEYS['INTERACT']:
+                self.interact_with_door()
+
+            # switch weapon by keys
+            if event.key == KEYS['WEAPON_1']:
+                self.switch_weapon(weapon_id=ID.KNIFE_0)
+            elif event.key == KEYS['WEAPON_2']:
+                self.switch_weapon(weapon_id=ID.PISTOL_0)
+            elif event.key == KEYS['WEAPON_3']:
+                self.switch_weapon(weapon_id=ID.RIFLE_0)
+
+        # weapon by mouse wheel
+        if event.type == pg.MOUSEWHEEL:
+            weapon_id = next(self.weapon_cycle)
+            if self.weapons[weapon_id]:
+                self.switch_weapon(weapon_id=weapon_id)
+
+        # shooting
         if event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 1 and not self.shot and not self.game.weapon.reloading:
-                self.game.sound.shotgun.play()
-                self.shot = True
-                self.game.weapon.reloading = True
-
-    def movement(self):
-        sin_a = math.sin(self.angle)
-        cos_a = math.cos(self.angle)
-        dx, dy = 0, 0
-        speed = PLAYER_SPEED * self.game.delta_time
-        speed_sin = speed * sin_a
-        speed_cos = speed * cos_a
-
-        keys = pg.key.get_pressed()
-        if keys[pg.K_w]:
-            dx += speed_cos
-            dy += speed_sin
-        if keys[pg.K_s]:
-            dx += -speed_cos
-            dy += -speed_sin
-        if keys[pg.K_a]:
-            dx += speed_sin
-            dy += -speed_cos
-        if keys[pg.K_d]:
-            dx += -speed_sin
-            dy += speed_cos
-
-        self.check_wall_collision(dx, dy)
-
-        # if keys[pg.K_LEFT]:
-        #     self.angle -= PLAYER_ROT_SPEED * self.game.delta_time
-        # if keys[pg.K_RIGHT]:
-        #     self.angle += PLAYER_ROT_SPEED * self.game.delta_time
-        self.angle %= math.tau
-
-    def check_wall(self, x, y):
-        return (x, y) not in self.game.map.world_map
-
-    def check_wall_collision(self, dx, dy):
-        scale = PLAYER_SIZE_SCALE / self.game.delta_time
-        if self.check_wall(int(self.x + dx * scale), int(self.y)):
-            self.x += dx
-        if self.check_wall(int(self.x), int(self.y + dy * scale)):
-            self.y += dy
-
-    def draw(self):
-        pg.draw.line(self.game.screen, 'yellow', (self.x * 100, self.y * 100),
-                    (self.x * 100 + WIDTH * math.cos(self.angle),
-                     self.y * 100 + WIDTH * math. sin(self.angle)), 2)
-        pg.draw.circle(self.game.screen, 'green', (self.x * 100, self.y * 100), 15)
-
-    
-    def mouse_control(self):##Reykar Changed So that mouse always stays in the middle. Before Problem with mouse hitting the ends of the screen.
-    # Get the relative horizontal mouse movement
-        self.rel = pg.mouse.get_rel()[0]
-        self.rel = max(-MOUSE_MAX_REL, min(MOUSE_MAX_REL, self.rel))
-        self.angle += self.rel * MOUSE_SENSITIVITY * self.game.delta_time
-    # Always re-center the mouse so you continuously get relative movement
-        pg.mouse.set_pos([HALF_WIDTH, HALF_HEIGHT])
-
+            if event.button == 1:
+                self.do_shot()
 
     def update(self):
-        self.movement()
         self.mouse_control()
-        self.recover_health()
+        self.keyboard_control()
+        super().update()
+        #
+        self.check_health()
+        self.update_tile_position()
+        self.pick_up_item()
 
-    @property
-    def pos(self):
-        return self.x, self.y
+    def check_health(self):
+        if self.health <= 0:
+            self.play(self.sound.player_death)
+            #
+            pg.time.wait(2000)
+            self.eng.player_attribs = PlayerAttribs()
+            self.eng.new_game()
 
-    @property
-    def map_pos(self):
-        return int(self.x), int(self.y)
+    def check_hit_on_npc(self):
+        if WEAPON_SETTINGS[self.weapon_id]['miss_probability'] > random.random():
+            return None
+
+        if npc_pos := self.eng.ray_casting.run(
+                start_pos=self.position,
+                direction=self.forward,
+                max_dist=WEAPON_SETTINGS[self.weapon_id]['max_dist'],
+                npc_to_player_flag=False
+        ):
+            npc = self.eng.level_map.npc_map[npc_pos]
+            npc.get_damage()
+
+    def switch_weapon(self, weapon_id):
+        if self.weapons[weapon_id]:
+            self.weapon_instance.weapon_id = self.weapon_id = weapon_id
+
+    def do_shot(self):
+        if self.weapon_id == ID.KNIFE_0:
+            self.is_shot = True
+            self.check_hit_on_npc()
+            #
+            self.play(self.sound.player_attack[ID.KNIFE_0])
+
+        elif self.ammo:
+            consumption = WEAPON_SETTINGS[self.weapon_id]['ammo_consumption']
+            if not self.is_shot and self.ammo >= consumption:
+                self.is_shot = True
+                self.check_hit_on_npc()
+                #
+                self.ammo -= consumption
+                self.ammo = max(0, self.ammo)
+                #
+                self.play(self.sound.player_attack[self.weapon_id])
+
+    def update_tile_position(self):
+        self.tile_pos = int(self.position.x), int(self.position.z)
+
+    def pick_up_item(self):
+        if self.tile_pos not in self.item_map:
+            return None
+
+        item = self.item_map[self.tile_pos]
+        #
+        if item.tex_id == ID.MED_KIT:
+            self.health += ITEM_SETTINGS[ID.MED_KIT]['value']
+            self.health = min(self.health, MAX_HEALTH_VALUE)
+        #
+        elif item.tex_id == ID.AMMO:
+            self.ammo += ITEM_SETTINGS[ID.AMMO]['value']
+            self.ammo = min(self.ammo, MAX_AMMO_VALUE)
+        #
+        elif item.tex_id == ID.PISTOL_ICON:
+            if not self.weapons[ID.PISTOL_0]:
+                self.weapons[ID.PISTOL_0] = 1
+                self.switch_weapon(weapon_id=ID.PISTOL_0)
+        #
+        elif item.tex_id == ID.RIFLE_ICON:
+            if not self.weapons[ID.RIFLE_0]:
+                self.weapons[ID.RIFLE_0] = 1
+                self.switch_weapon(weapon_id=ID.RIFLE_0)
+        #
+        elif item.tex_id == ID.KEY:
+            self.key = 1
+        #
+        self.play(self.sound.pick_up[item.tex_id])
+        #
+        del self.item_map[self.tile_pos]
+
+    def interact_with_door(self):
+        pos = self.position + self.forward
+        int_pos = int(pos.x), int(pos.z)
+
+        if int_pos not in self.door_map:
+            return None
+
+        door = self.door_map[int_pos]
+        #
+        if self.key and door.tex_id == ID.KEY_DOOR:
+            #
+            door.is_closed = not door.is_closed
+            self.play(self.sound.player_missed)
+            # next level
+            pg.time.wait(300)
+            #
+            self.eng.player_attribs.update(player=self)
+            self.eng.player_attribs.num_level += 1
+            self.eng.player_attribs.num_level %= NUM_LEVELS
+            self.eng.new_game()
+        else:
+            door.is_moving = True
+            self.play(self.sound.open_door)
+
+    def mouse_control(self):
+        mouse_dx, mouse_dy = pg.mouse.get_rel()
+        if mouse_dx:
+            self.rotate_yaw(delta_x=mouse_dx * MOUSE_SENSITIVITY)
+        if mouse_dy:
+            self.rotate_pitch(delta_y=mouse_dy * MOUSE_SENSITIVITY)
+
+    def keyboard_control(self):
+        key_state = pg.key.get_pressed()
+        vel = PLAYER_SPEED * self.app.delta_time
+        next_step = glm.vec2()
+        #
+        if key_state[KEYS['FORWARD']]:
+            next_step += self.move_forward(vel)
+        if key_state[KEYS['BACK']]:
+            next_step += self.move_back(vel)
+        if key_state[KEYS['STRAFE_R']]:
+            next_step += self.move_right(vel)
+        if key_state[KEYS['STRAFE_L']]:
+            next_step += self.move_left(vel)
+        #
+        self.move(next_step=next_step)
+
+    def move(self, next_step):
+        if not self.is_collide(dx=next_step[0]):
+            self.position.x += next_step[0]
+
+        if not self.is_collide(dz=next_step[1]):
+            self.position.z += next_step[1]
+
+    def is_collide(self, dx=0, dz=0):
+        int_pos = (
+            int(self.position.x + dx + (
+                PLAYER_SIZE if dx > 0 else -PLAYER_SIZE if dx < 0 else 0)
+                ),
+            int(self.position.z + dz + (
+                PLAYER_SIZE if dz > 0 else -PLAYER_SIZE if dz < 0 else 0)
+                )
+        )
+        # check doors
+        if int_pos in self.door_map:
+            return self.door_map[int_pos].is_closed
+        # check walls
+        return int_pos in self.wall_map
