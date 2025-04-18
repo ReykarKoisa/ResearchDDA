@@ -6,14 +6,15 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "moderngl==5.8.2",
+    "networkx>=3.4.2",
     "numpy==1.25.2",
+    "packaging>=24.2",
     "pygame==2.5.1",
     "pyglm==2.7.0",
     "pytmx==3.32",
     "scikit-fuzzy>=0.5.0",
+    "scipy>=1.15.2",
 ]
 
 [dependency-groups]
-dev = [
-    "ruff>=0.11.2",
-]
+dev = ["ruff>=0.11.2"]
