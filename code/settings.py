@@ -1,7 +1,10 @@
 import math
 import glm
 import pygame as pg
+from game_stats import GameStats
 from texture_id import ID
+
+runtime_game_stats = GameStats()
 
 # opengl
 MAJOR_VERSION = 3

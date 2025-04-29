@@ -82,7 +82,7 @@ class Player(Camera):
     def check_health(self):
         if self.health <= 0:
             self.play(self.sound.player_death)
-            #
+            runtime_game_stats.increment_death()
             pg.time.wait(2000)
             self.eng.player_attribs = PlayerAttribs()
             self.eng.new_game()
@@ -172,6 +172,8 @@ class Player(Camera):
             # next level
             pg.time.wait(300)
             #
+            # runtime_game_stats.set_time() -- Commenting this out for now
+            runtime_game_stats.set_health(self.health)
             self.eng.player_attribs.update(player=self)
             self.eng.player_attribs.num_level += 1
             self.eng.player_attribs.num_level %= NUM_LEVELS
