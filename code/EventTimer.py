@@ -14,11 +14,13 @@ class EventTimer:
             self.end_time = get_ticks()
 
     def get_duration(self):
-        if self.start_time is not None and self.end_time is not None:
-            return (self.end_time - self.start_time) / 1000  # in seconds
-        elif self.start_time is not None:
-            return (get_ticks() - self.start_time) / 1000  # still running
-        return 0
+        if self.start_time is None:
+            return 0
+        if self.is_running():
+            return (get_ticks() - self.start_time) / 1000  # Timer still running
+        else:
+            return (self.end_time - self.start_time) / 1000  # Timer stopped
+
 
     def is_running(self):
         return self.start_time is not None and self.end_time is None
