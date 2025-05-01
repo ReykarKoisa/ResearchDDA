@@ -16,10 +16,10 @@ class EventTimer:
     def get_duration(self):
         if self.start_time is None:
             return 0
-        if self.is_running():
-            return (get_ticks() - self.start_time) / 1000  # Timer still running
-        else:
-            return (self.end_time - self.start_time) / 1000  # Timer stopped
+        if self.is_running(): #if timer is running
+            return (get_ticks() - self.start_time) / 1000  
+        else: # if the timer is stopped
+            return (self.end_time - self.start_time) / 1000  
 
 
     def is_running(self):
