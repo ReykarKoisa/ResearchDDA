@@ -2,13 +2,13 @@ import math
 import glm
 import pygame as pg
 from game_stats import GameStats
-from EventTimer import EventTimer
+from event_timer import EventTimer
 from texture_id import ID
 
 runtime_game_stats = GameStats()
 
-Level_duration = EventTimer()#This is for the Fuzzy Controller
-Total_duration = EventTimer()#This is to get the time in general
+level_duration = EventTimer() #This is for the Fuzzy Controller
+total_duration = EventTimer() #This is to get the time in general
 
 # opengl
 MAJOR_VERSION = 3
