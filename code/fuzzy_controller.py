@@ -26,7 +26,7 @@ deaths['few'] = fuzz.trimf(deaths.universe, [0, 0, 3])
 deaths['moderate'] = fuzz.trimf(deaths.universe, [2, 5, 7])
 deaths['many'] = fuzz.trimf(deaths.universe, [6, 10, 10])
 
-# Completion Time (in seconds):
+
 # Fast: less than 2 minutes (<120s)
 # Medium: between 2 and 5 minutes (120s to 300s)
 # Slow: more than 5 minutes (>300s)
@@ -36,7 +36,6 @@ completion_time['slow'] = fuzz.trimf(completion_time.universe, [300, 600, 600])
 
 
 # membership function for output (we need to adjust with play testing)
-# Enemy Damage Adjustment multipliers (you can change these values later)
 enemy_damage['decrease'] = fuzz.trimf(enemy_damage.universe, [0.5, 0.6, 0.8])
 enemy_damage['slight_decrease'] = fuzz.trimf(enemy_damage.universe, [0.75, 0.85, 0.95])
 enemy_damage['keep_same'] = fuzz.trimf(enemy_damage.universe, [0.95, 1.0, 1.05])

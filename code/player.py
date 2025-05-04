@@ -83,6 +83,7 @@ class Player(Camera):
         if self.health <= 0:
             self.play(self.sound.player_death)
             runtime_game_stats.increment_death()
+            runtime_game_stats.set_time(Level_duration.get_duration())
             pg.time.wait(2000)
             self.eng.player_attribs = PlayerAttribs()
             self.eng.new_game()
@@ -170,10 +171,15 @@ class Player(Camera):
             door.is_closed = not door.is_closed
             self.play(self.sound.player_missed)
             # next level
+            Level_duration.stop()
             pg.time.wait(300)
             #
             # runtime_game_stats.set_time() -- Commenting this out for now
             runtime_game_stats.set_health(self.health)
+            
+            runtime_game_stats.set_time(Level_duration.get_duration)
+            Level_duration.start()
+
             self.eng.player_attribs.update(player=self)
             self.eng.player_attribs.num_level += 1
             self.eng.player_attribs.num_level %= NUM_LEVELS

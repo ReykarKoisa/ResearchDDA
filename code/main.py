@@ -67,10 +67,13 @@ class Game:
             self.engine.handle_events(event=event)
 
     def run(self):
+        Total_duration.start()#This is for Total Duration
         while self.is_running:
             self.handle_events()
             self.update()
             self.render()
+        Total_duration.stop()
+        Total_duration.get_duration()#this is just a rough sketch. we should save the time into a file
         pg.quit()
         sys.exit()
 
