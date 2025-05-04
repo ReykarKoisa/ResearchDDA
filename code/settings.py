@@ -2,7 +2,7 @@ import math
 import glm
 import pygame as pg
 from game_stats import GameStats
-from EventTimer import EventTimer
+from event_timer import EventTimer
 from texture_id import ID
 
 runtime_game_stats = GameStats()
