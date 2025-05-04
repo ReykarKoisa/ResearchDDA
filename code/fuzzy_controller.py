@@ -103,18 +103,23 @@ rule8 = ctrl.Rule(health['moderate'] & deaths['many'],
 rule9 = ctrl.Rule(health['moderate'] & deaths['few'],
                   consequent=[enemy_damage['keep_same'], enemy_health['keep_same']])
 
-# --- Rule 10 (NEW): Player has optimal health, but died many times and took a long time. ---
-# This scenario might indicate the player is good defensively but struggles with
-# enemy health/damage over prolonged fights. Slightly decrease damage, keep health same.
+# Rule 10: Player has optimal health, but died many times and took a long time.
+# Good defense but struggles offensively over time? Slightly decrease damage, keep health same.
 rule10 = ctrl.Rule(health['optimal'] & deaths['many'] & completion_time['slow'],
                    consequent=[enemy_damage['slight_decrease'], enemy_health['keep_same']])
+
+# --- Rule 11: Player has critical health, few deaths, and fast time. ---
+# This covers the edge case where the player is fast and efficient but vulnerable.
+# Keep enemy health the same, let Rule 7 increase damage slightly due to speed/few deaths.
+rule11 = ctrl.Rule(health['critical'] & deaths['few'] & completion_time['fast'],
+                   consequent=enemy_health['keep_same'])
 
 
 # --- Control System Creation and Simulation ---
 
 # Create the control system with all the rules
-# *Added rule10 to the list*
-difficulty_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10])
+# *Added rule11 to the list*
+difficulty_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11])
 
 # Create a simulation instance from the control system
 difficulty_sim = ctrl.ControlSystemSimulation(difficulty_ctrl)
@@ -137,22 +142,33 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
     """
     try:
         # Pass inputs to the ControlSystemSimulation
-        difficulty_sim.input['health'] = player_health
-        difficulty_sim.input['deaths'] = player_deaths
-        difficulty_sim.input['completion_time'] = level_time_sec
+        # Clip inputs to ensure they are within the defined universe ranges
+        difficulty_sim.input['health'] = np.clip(player_health, 0, 100)
+        difficulty_sim.input['deaths'] = np.clip(player_deaths, 0, 10)
+        difficulty_sim.input['completion_time'] = np.clip(level_time_sec, 0, 600)
 
         # Compute the fuzzy system result
         difficulty_sim.compute()
 
         # Retrieve the defuzzified output values
-        damage_output = difficulty_sim.output['enemy_damage']
-        health_output = difficulty_sim.output['enemy_health']
+        # Use .get() with a default value for extra safety
+        damage_output = difficulty_sim.output.get('enemy_damage', 1.0)
+        health_output = difficulty_sim.output.get('enemy_health', 1.0)
+
+        # Handle potential NaN or Inf values if compute somehow fails silently
+        if not np.isfinite(damage_output):
+            print(f"Warning: Computed damage output is not finite ({damage_output}). Defaulting to 1.0.")
+            damage_output = 1.0
+        if not np.isfinite(health_output):
+            print(f"Warning: Computed health output is not finite ({health_output}). Defaulting to 1.0.")
+            health_output = 1.0
 
         return damage_output, health_output
 
     except KeyError as e:
+        # This block should ideally not be hit now with the added rule, but kept as a safeguard
         print(f"Warning: Could not compute output for {e}. Rules might not cover this input combination.")
-        print("Inputs: health={player_health}, deaths={player_deaths}, time={level_time_sec}")
+        print(f"Inputs: health={player_health}, deaths={player_deaths}, time={level_time_sec}")
         # Return default multipliers (no change) if a key is missing
         return 1.0, 1.0
     except Exception as e:
@@ -164,57 +180,58 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
 # --- Example Usage ---
 if __name__ == "__main__":
 
-    # Test Case 1: The problematic one (High Health, Many Deaths, Slow Time)
-    print("--- Test Case 1 ---")
-    player_health_1 = 99
-    player_deaths_1 = 7
-    level_time_sec_1 = 360
+    # Define a helper function for running and printing tests
+    def run_test(test_name, health_val, deaths_val, time_val):
+        print(f"--- {test_name} ---")
+        damage_mult, health_mult = check_DDA_adjust_difficulty(
+            health_val, deaths_val, time_val
+        )
+        print(f"Inputs: Health={health_val}, Deaths={deaths_val}, Time={time_val}s")
+        print(f"Output: Enemy Damage Multiplier: {damage_mult:.2f}")
+        print(f"Output: Enemy Health Multiplier: {health_mult:.2f}\n")
 
-    damage_multiplier_1, health_multiplier_1 = check_DDA_adjust_difficulty(
-        player_health_1, player_deaths_1, level_time_sec_1
-    )
+    # --- Original Test Cases ---
+    print("--- Original Test Cases ---")
+    run_test("Test Case 1: Problematic (High Health, Many Deaths, Slow Time)", 100, 7, 360)
+    run_test("Test Case 2: Original Working (Mod Health, Many Deaths, Slow Time)", 60, 7, 360)
+    run_test("Test Case 3: Skilled Player (High Health, Few Deaths, Fast Time)", 90, 1, 100)
+    run_test("Test Case 4: Struggling Player (Low Health, Many Deaths, Slow Time)", 20, 8, 450)
 
-    print(f"Inputs: Health={player_health_1}, Deaths={player_deaths_1}, Time={level_time_sec_1}s")
-    print(f"Output: Enemy Damage Multiplier: {damage_multiplier_1:.2f}")
-    print(f"Output: Enemy Health Multiplier: {health_multiplier_1:.2f}\n")
+    # --- Additional Test Cases ---
+    print("--- Additional Test Cases ---")
+    run_test("Test Case 5: Average Player (Mod Health, Mod Deaths, Med Time)", 55, 5, 250)
+    run_test("Test Case 6: Careful but Slow (Low Health, Few Deaths, Slow Time)", 30, 2, 500)
+    run_test("Test Case 7: Fast but Reckless (Mod Health, Many Deaths, Fast Time)", 65, 9, 110)
+    run_test("Test Case 8: Perfect Run (Optimal Health, Zero Deaths, Fast Time)", 100, 0, 90)
+    run_test("Test Case 9: Near Death, Many Deaths, Medium Time", 5, 10, 280)
+    run_test("Test Case 10: Boundary Low (Min Values)", 0, 0, 0)
+    run_test("Test Case 11: Boundary High (Max Values)", 100, 10, 600)
+    run_test("Test Case 12: Moderate Health, Few Deaths, Slow Time", 50, 2, 400)
 
+    # --- Edge Case / Boundary / Transition Tests ---
+    print("\n--- Edge Case / Boundary / Transition Tests ---")
+    # Health Boundaries/Transitions
+    run_test("Edge Case 13: Health exactly at Critical/Moderate boundary", 30, 5, 200) # Health=30
+    run_test("Edge Case 14: Health exactly at Moderate peak", 50, 5, 200) # Health=50
+    run_test("Edge Case 15: Health exactly at Moderate/Optimal boundary", 70, 5, 200) # Health=70
+    run_test("Edge Case 16: Health just inside Optimal", 61, 5, 200) # Health=61
 
-    # Test Case 2: Original working case (Moderate Health, Many Deaths, Slow Time)
-    print("--- Test Case 2 ---")
-    player_health_2 = 60
-    player_deaths_2 = 7
-    level_time_sec_2 = 360
+    # Deaths Boundaries/Transitions
+    run_test("Edge Case 17: Deaths exactly at Few/Moderate boundary", 2, 80, 200) # Deaths=2
+    run_test("Edge Case 18: Deaths exactly at Moderate peak", 5, 80, 200) # Deaths=5
+    run_test("Edge Case 19: Deaths exactly at Moderate/Many boundary", 7, 80, 200) # Deaths=7
+    run_test("Edge Case 20: Deaths just inside Many", 6, 80, 200) # Deaths=6 (Note: trimf makes 6 = 0 for moderate, 1 for many)
 
-    damage_multiplier_2, health_multiplier_2 = check_DDA_adjust_difficulty(
-        player_health_2, player_deaths_2, level_time_sec_2
-    )
+    # Time Boundaries/Transitions
+    run_test("Edge Case 21: Time exactly at Fast/Medium boundary", 50, 5, 120) # Time=120
+    run_test("Edge Case 22: Time exactly at Medium peak", 50, 5, 210) # Time=210
+    run_test("Edge Case 23: Time exactly at Medium/Slow boundary", 50, 5, 300) # Time=300
+    run_test("Edge Case 24: Time just inside Slow", 50, 5, 301) # Time=301
 
-    print(f"Inputs: Health={player_health_2}, Deaths={player_deaths_2}, Time={level_time_sec_2}s")
-    print(f"Output: Enemy Damage Multiplier: {damage_multiplier_2:.2f}")
-    print(f"Output: Enemy Health Multiplier: {health_multiplier_2:.2f}\n")
+    # Combinations potentially stressing rules
+    run_test("Edge Case 25: Optimal Health, Moderate Deaths, Fast Time", 90, 5, 100)
+    run_test("Edge Case 26: Critical Health, Moderate Deaths, Slow Time", 10, 5, 500)
+    run_test("Edge Case 27: Moderate Health, Few Deaths, Fast Time", 50, 1, 100)
+    run_test("Edge Case 28: Moderate Health, Many Deaths, Medium Time", 50, 9, 250)
+    run_test("Edge Case 29: Optimal Health, Many Deaths, Fast Time", 90, 10, 115) # Should trigger decrease? (Rule 10 needs slow time)
 
-    # Test Case 3: Skilled player (High Health, Few Deaths, Fast Time)
-    print("--- Test Case 3 ---")
-    player_health_3 = 90
-    player_deaths_3 = 1
-    level_time_sec_3 = 100 # Fast
-
-    damage_multiplier_3, health_multiplier_3 = check_DDA_adjust_difficulty(
-        player_health_3, player_deaths_3, level_time_sec_3
-    )
-    print(f"Inputs: Health={player_health_3}, Deaths={player_deaths_3}, Time={level_time_sec_3}s")
-    print(f"Output: Enemy Damage Multiplier: {damage_multiplier_3:.2f}")
-    print(f"Output: Enemy Health Multiplier: {health_multiplier_3:.2f}\n")
-
-    # Test Case 4: Struggling player (Low Health, Many Deaths, Slow Time)
-    print("--- Test Case 4 ---")
-    player_health_4 = 20 # Critical
-    player_deaths_4 = 8  # Many
-    level_time_sec_4 = 450 # Slow
-
-    damage_multiplier_4, health_multiplier_4 = check_DDA_adjust_difficulty(
-        player_health_4, player_deaths_4, level_time_sec_4
-    )
-    print(f"Inputs: Health={player_health_4}, Deaths={player_deaths_4}, Time={level_time_sec_4}s")
-    print(f"Output: Enemy Damage Multiplier: {damage_multiplier_4:.2f}")
-    print(f"Output: Enemy Health Multiplier: {health_multiplier_4:.2f}\n")
