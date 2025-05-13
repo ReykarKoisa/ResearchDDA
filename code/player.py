@@ -174,7 +174,6 @@ class Player(Camera):
             level_duration.stop()
             pg.time.wait(300)
             #
-            # runtime_game_stats.set_time() -- Commenting this out for now
             runtime_game_stats.set_health(self.health)
             
             runtime_game_stats.set_time(level_duration.get_duration)

@@ -17,7 +17,7 @@ class GameStats:
         self.health = x
 
     def increment_death(self):
-        self.death += 1
+        self.deaths += 1
 
     def set_time(self, x):
         self.time = x

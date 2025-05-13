@@ -1,6 +1,6 @@
 from game_objects.game_object import GameObject
 from meshes.quad_mesh import QuadMesh
-from typing import Iterable, Any
+from typing import Iterable
 import moderngl as mgl
 import numpy as np
 

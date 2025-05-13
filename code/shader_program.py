@@ -1,5 +1,4 @@
 from settings import *
-from texture_id import ID
 
 
 class ShaderProgram:
