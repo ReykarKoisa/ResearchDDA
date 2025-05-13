@@ -1,4 +1,3 @@
-from meshes.quad_mesh import QuadMesh
 from game_objects.game_object import GameObject
 from settings import *
 

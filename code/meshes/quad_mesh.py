@@ -1,4 +1,3 @@
-from meshes.base_mesh import BaseMesh
 from settings import *
 import numpy as np
 
