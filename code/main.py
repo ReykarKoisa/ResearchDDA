@@ -75,7 +75,7 @@ class Game:
             self.render()
         total_duration.stop()
         level_duration.stop()
-        total_duration.get_duration()#this is just a rough sketch. we should save the time into a file
+        GameLogger.log_total_duration(total_duration.get_duration)
         pg.quit()
         sys.exit()
 
