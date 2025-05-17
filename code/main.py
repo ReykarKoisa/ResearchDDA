@@ -75,7 +75,7 @@ class Game:
             self.render()
         total_duration.stop()
         level_duration.stop()
-        GameLogger.log_total_duration(total_duration.get_duration)
+        game_logger.log_total_duration(total_duration.get_duration)
         pg.quit()
         sys.exit()
 
