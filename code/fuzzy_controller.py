@@ -110,7 +110,7 @@ rule10 = ctrl.Rule(health['optimal'] & deaths['many'] & completion_time['slow'],
 
 # Rule 11: Player has critical health, few deaths, and fast time.
 # This covers the edge case where the player is fast and efficient but vulnerable.
-# Keep enemy health the same, let Rule 7 increase damage slightly due to speed/few deaths.
+# Keep enemy health the same, but reduce damage slightly.
 rule11 = ctrl.Rule(health['critical'] & deaths['few'] & completion_time['fast'],
                    consequent=[enemy_damage['slight_decrease'], enemy_health['keep_same']]) # Adjusted to slight_decrease damage due to critical health
 
