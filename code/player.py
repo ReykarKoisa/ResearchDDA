@@ -1,6 +1,7 @@
 from itertools import cycle
 from camera import Camera
 from settings import *
+from game_objects.npc import damage_mult, health_mult
 import random
 
 
@@ -84,6 +85,12 @@ class Player(Camera):
             self.play(self.sound.player_death)
             runtime_game_stats.increment_death()
             runtime_game_stats.set_time(level_duration.get_duration())
+            GameLogger.log_death(
+                  runtime_game_stats.get_health,
+                  runtime_game_stats.get_deaths,
+                  runtime_game_stats.get_time,
+                  damage_mult,
+                  health_mult)
             pg.time.wait(2000)
             self.eng.player_attribs = PlayerAttribs()
             self.eng.new_game()
@@ -177,6 +184,12 @@ class Player(Camera):
             runtime_game_stats.set_health(self.health)
             
             runtime_game_stats.set_time(level_duration.get_duration)
+            GameLogger.log_level_complete(
+                  runtime_game_stats.get_health,
+                  runtime_game_stats.get_deaths,
+                  runtime_game_stats.get_time,
+                  damage_mult,
+                  health_mult)
             level_duration.start()
 
             self.eng.player_attribs.update(player=self)
