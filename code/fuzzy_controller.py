@@ -20,48 +20,48 @@ enemy_health = ctrl.Consequent(np.arange(0.5, 1.51, 0.01), 'enemy_health')
 
 # Health: Lower is worse, higher is better.
 # Critical: Low health remaining.
-health['critical'] = fuzz.trimf(health.universe, [0, 0, 40])
+health['critical'] = fuzz.trimf(health.universe, [0, 20, 55])      # Was [0, 0, 40]
 # Moderate: Medium health remaining.
-health['moderate'] = fuzz.trimf(health.universe, [30, 50, 70])
+health['moderate'] = fuzz.trimf(health.universe, [40, 60, 80])    # Was [30, 50, 70]
 # Optimal: High health remaining.
-health['optimal'] = fuzz.trimf(health.universe, [60, 100, 100])
+health['optimal'] = fuzz.trimf(health.universe, [65, 85, 100])     # Was [60, 100, 100]
 
 # Deaths: Lower is better, higher is worse.
 # Few: Player died very few times or not at all.
-deaths['few'] = fuzz.trimf(deaths.universe, [0, 0, 3])
+deaths['few'] = fuzz.trimf(deaths.universe, [0, 1, 4])            # Was [0, 0, 3]
 # Moderate: Player died a moderate number of times.
-deaths['moderate'] = fuzz.trimf(deaths.universe, [2, 5, 7])
+deaths['moderate'] = fuzz.trimf(deaths.universe, [2, 5, 8])       # Was [2, 5, 7]
 # Many: Player died many times.
-deaths['many'] = fuzz.trimf(deaths.universe, [6, 10, 10])
+deaths['many'] = fuzz.trimf(deaths.universe, [6, 10, 10])       # Unchanged, but contextually more overlap
 
 # Completion Time: Lower (faster) is generally better.
 # Fast: Completed the level quickly (< 2 minutes).
-completion_time['fast'] = fuzz.trimf(completion_time.universe, [0, 0, 120])
+completion_time['fast'] = fuzz.trimf(completion_time.universe, [0, 90, 210])     # Was [0, 0, 120] (Peak 1.5m, up to 3.5m)
 # Medium: Completed the level in a moderate amount of time (2-5 minutes).
-completion_time['medium'] = fuzz.trimf(completion_time.universe, [120, 210, 300])
+completion_time['medium'] = fuzz.trimf(completion_time.universe, [180, 300, 420]) # Was [120, 210, 300] (Peak 5m, from 3m to 7m)
 # Slow: Took a long time to complete the level (> 5 minutes).
-completion_time['slow'] = fuzz.trimf(completion_time.universe, [300, 600, 600])
+completion_time['slow'] = fuzz.trimf(completion_time.universe, [360, 480, 600])   # Was [300, 600, 600] (Peak 8m, from 6m up)
 
 # --- Membership Functions for Outputs ---
 # Define how much to adjust enemy stats based on performance.
 
 # Enemy Damage Adjustment:
 # Decrease: Significantly reduce enemy damage (easier).
-enemy_damage['decrease'] = fuzz.trimf(enemy_damage.universe, [0.5, 0.6, 0.8])
+enemy_damage['decrease'] = fuzz.trimf(enemy_damage.universe, [0.5, 0.65, 0.85]) # Original: [0.5, 0.6, 0.8]
 # Slight Decrease: Slightly reduce enemy damage.
-enemy_damage['slight_decrease'] = fuzz.trimf(enemy_damage.universe, [0.75, 0.85, 0.95])
+enemy_damage['slight_decrease'] = fuzz.trimf(enemy_damage.universe, [0.80, 0.90, 0.97]) # Original: [0.75, 0.85, 0.95] (ends closer to 1.0)
 # Keep Same: No change to enemy damage.
-enemy_damage['keep_same'] = fuzz.trimf(enemy_damage.universe, [0.95, 1.0, 1.05])
+enemy_damage['keep_same'] = fuzz.trimf(enemy_damage.universe, [0.95, 1.0, 1.05])      # Original: [0.95, 1.0, 1.05] (This is fairly tight already)
 # Increase: Increase enemy damage (harder).
-enemy_damage['increase'] = fuzz.trimf(enemy_damage.universe, [1.05, 1.2, 1.5])
+enemy_damage['increase'] = fuzz.trimf(enemy_damage.universe, [1.03, 1.2, 1.5])        # Original: [1.05, 1.2, 1.5] (Starts slightly earlier)
 
 # Enemy Health Adjustment:
 # Decrease: Significantly reduce enemy health (easier).
-enemy_health['decrease'] = fuzz.trimf(enemy_health.universe, [0.5, 0.7, 0.9])
+enemy_health['decrease'] = fuzz.trimf(enemy_health.universe, [0.5, 0.7, 0.92]) # Original: [0.5, 0.7, 0.9] (ends closer to 1.0)
 # Keep Same: No change to enemy health.
-enemy_health['keep_same'] = fuzz.trimf(enemy_health.universe, [0.95, 1.0, 1.05])
+enemy_health['keep_same'] = fuzz.trimf(enemy_health.universe, [0.95, 1.0, 1.05])   # Original: [0.95, 1.0, 1.05]
 # Increase: Increase enemy health (harder).
-enemy_health['increase'] = fuzz.trimf(enemy_health.universe, [1.1, 1.3, 1.5])
+enemy_health['increase'] = fuzz.trimf(enemy_health.universe, [1.03, 1.25, 1.5]) # Original: [1.1, 1.3, 1.5] (CRITICAL: Starts earlier, fixes gap)
 
 
 # --- Fuzzy Rules ---
@@ -108,11 +108,11 @@ rule9 = ctrl.Rule(health['moderate'] & deaths['few'],
 rule10 = ctrl.Rule(health['optimal'] & deaths['many'] & completion_time['slow'],
                    consequent=[enemy_damage['slight_decrease'], enemy_health['keep_same']])
 
-# --- Rule 11: Player has critical health, few deaths, and fast time. ---
+# Rule 11: Player has critical health, few deaths, and fast time.
 # This covers the edge case where the player is fast and efficient but vulnerable.
 # Keep enemy health the same, let Rule 7 increase damage slightly due to speed/few deaths.
 rule11 = ctrl.Rule(health['critical'] & deaths['few'] & completion_time['fast'],
-                   consequent=enemy_health['keep_same'])
+                   consequent=[enemy_damage['slight_decrease'], enemy_health['keep_same']]) # Adjusted to slight_decrease damage due to critical health
 
 
 # --- Control System Creation and Simulation ---
