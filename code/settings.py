@@ -10,6 +10,9 @@ runtime_game_stats = GameStats()
 level_duration = EventTimer() #This is for the Fuzzy Controller
 total_duration = EventTimer() #This is to get the time in general
 
+# Dynamic Difficulty Adjustment
+DDA_ON = True
+
 # opengl
 MAJOR_VERSION = 3
 MINOR_VERSION = 3
