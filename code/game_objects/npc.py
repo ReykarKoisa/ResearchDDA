@@ -4,20 +4,18 @@ import random
 from game_objects.game_object import GameObject
 from game_objects.item import Item
 
-
+damage_mult, health_mult = fuzzy_controller.check_DDA_adjust_difficulty(
+            runtime_game_stats.get_health(),
+            runtime_game_stats.get_deaths(),
+            runtime_game_stats.get_time(),
+        )
 class NPC(GameObject):
     def __init__(self, level_map, tex_id, x, z):
         super().__init__(level_map, tex_id, x, z)
         self.level_map = level_map
         self.player = self.eng.player
         self.npc_id = tex_id
-        #
-
-        damage_mult, health_mult = fuzzy_controller.check_DDA_adjust_difficulty(
-            runtime_game_stats.get_health(),
-            runtime_game_stats.get_deaths(),
-            runtime_game_stats.get_time(),
-        )
+        
         self.scale = NPC_SETTINGS[self.npc_id]["scale"]
         self.speed = NPC_SETTINGS[self.npc_id]["speed"]
         self.size = NPC_SETTINGS[self.npc_id]["size"]
