@@ -11,83 +11,74 @@ deaths = ctrl.Antecedent(np.arange(0, 11, 1), "deaths")
 completion_time = ctrl.Antecedent(np.arange(0, 601, 1), "completion_time")
 
 # Define output variables (enemy adjustment multipliers)
-# Multiplier for enemy damage (0.5 = 50%, 1.0 = 100%, 1.5 = 150%)
-enemy_damage = ctrl.Consequent(np.arange(0.5, 1.51, 0.01), "enemy_damage")
-# Multiplier for enemy health (0.5 = 50%, 1.0 = 100%, 1.5 = 150%)
-enemy_health = ctrl.Consequent(np.arange(0.5, 1.51, 0.01), "enemy_health")
+# Wider range for more sensitive adjustments (0.4-1.6 instead of 0.5-1.5)
+enemy_damage = ctrl.Consequent(np.arange(0.4, 1.61, 0.01), "enemy_damage")
+enemy_health = ctrl.Consequent(np.arange(0.4, 1.61, 0.01), "enemy_health")
 
 # --- Membership Functions for Inputs ---
+# Increasing overlap for more sensitivity
 
 # Health: Lower is worse, higher is better.
-# Critical: Low health remaining.
-health["critical"] = fuzz.trimf(health.universe, [0, 20, 55])  # Was [0, 0, 40]
-# Moderate: Medium health remaining.
-health["moderate"] = fuzz.trimf(health.universe, [40, 60, 80])  # Was [30, 50, 70]
-# Optimal: High health remaining.
-health["optimal"] = fuzz.trimf(health.universe, [65, 85, 100])  # Was [60, 100, 100]
+health["critical"] = fuzz.trimf(health.universe, [0, 25, 60])  # Was [0, 20, 55]
+health["moderate"] = fuzz.trimf(health.universe, [30, 60, 85])  # Was [40, 60, 80]
+health["optimal"] = fuzz.trimf(health.universe, [60, 85, 100])  # Was [65, 85, 100]
 
 # Deaths: Lower is better, higher is worse.
-# Few: Player died very few times or not at all.
-deaths["few"] = fuzz.trimf(deaths.universe, [0, 1, 4])  # Was [0, 0, 3]
-# Moderate: Player died a moderate number of times.
-deaths["moderate"] = fuzz.trimf(deaths.universe, [2, 5, 8])  # Was [2, 5, 7]
-# Many: Player died many times.
-deaths["many"] = fuzz.trimf(
-    deaths.universe, [6, 10, 10]
-)  # Unchanged, but contextually more overlap
+deaths["few"] = fuzz.trimf(deaths.universe, [0, 1, 5])  # Was [0, 1, 4]
+deaths["moderate"] = fuzz.trimf(deaths.universe, [1, 5, 8])  # Was [2, 5, 8]
+deaths["many"] = fuzz.trimf(deaths.universe, [5, 10, 10])  # Was [6, 10, 10]
 
 # Completion Time: Lower (faster) is generally better.
-# Fast: Completed the level quickly (< 2 minutes).
 completion_time["fast"] = fuzz.trimf(
-    completion_time.universe, [0, 90, 210]
-)  # Was [0, 0, 120] (Peak 1.5m, up to 3.5m)
-# Medium: Completed the level in a moderate amount of time (2-5 minutes).
+    completion_time.universe, [0, 90, 240]
+)  # Was [0, 90, 210]
 completion_time["medium"] = fuzz.trimf(
-    completion_time.universe, [180, 300, 420]
-)  # Was [120, 210, 300] (Peak 5m, from 3m to 7m)
-# Slow: Took a long time to complete the level (> 5 minutes).
+    completion_time.universe, [150, 300, 450]
+)  # Was [180, 300, 420]
 completion_time["slow"] = fuzz.trimf(
-    completion_time.universe, [360, 480, 600]
-)  # Was [300, 600, 600] (Peak 8m, from 6m up)
+    completion_time.universe, [300, 480, 600]
+)  # Was [360, 480, 600]
 
 # --- Membership Functions for Outputs ---
-# Define how much to adjust enemy stats based on performance.
+# More extreme adjustments for clearer difficulty changes
 
 # Enemy Damage Adjustment:
-# Decrease: Significantly reduce enemy damage (easier).
 enemy_damage["decrease"] = fuzz.trimf(
-    enemy_damage.universe, [0.5, 0.65, 0.85]
-)  # Original: [0.5, 0.6, 0.8]
-# Slight Decrease: Slightly reduce enemy damage.
+    enemy_damage.universe, [0.4, 0.6, 0.85]
+)  # Was [0.5, 0.65, 0.85]
 enemy_damage["slight_decrease"] = fuzz.trimf(
-    enemy_damage.universe, [0.80, 0.90, 0.97]
-)  # Original: [0.75, 0.85, 0.95] (ends closer to 1.0)
-# Keep Same: No change to enemy damage.
+    enemy_damage.universe, [0.75, 0.85, 0.97]
+)  # Was [0.80, 0.90, 0.97]
 enemy_damage["keep_same"] = fuzz.trimf(
-    enemy_damage.universe, [0.95, 1.0, 1.05]
-)  # Original: [0.95, 1.0, 1.05] (This is fairly tight already)
-# Increase: Increase enemy damage (harder).
+    enemy_damage.universe, [0.92, 1.0, 1.08]
+)  # Was [0.95, 1.0, 1.05]
+enemy_damage["slight_increase"] = fuzz.trimf(
+    enemy_damage.universe, [1.03, 1.15, 1.25]
+)  # New category
 enemy_damage["increase"] = fuzz.trimf(
-    enemy_damage.universe, [1.03, 1.2, 1.5]
-)  # Original: [1.05, 1.2, 1.5] (Starts slightly earlier)
+    enemy_damage.universe, [1.15, 1.35, 1.6]
+)  # Was [1.03, 1.2, 1.5]
 
 # Enemy Health Adjustment:
-# Decrease: Significantly reduce enemy health (easier).
 enemy_health["decrease"] = fuzz.trimf(
-    enemy_health.universe, [0.5, 0.7, 0.92]
-)  # Original: [0.5, 0.7, 0.9] (ends closer to 1.0)
-# Keep Same: No change to enemy health.
+    enemy_health.universe, [0.4, 0.65, 0.9]
+)  # Was [0.5, 0.7, 0.92]
+enemy_health["slight_decrease"] = fuzz.trimf(
+    enemy_health.universe, [0.75, 0.85, 0.97]
+)  # New category
 enemy_health["keep_same"] = fuzz.trimf(
-    enemy_health.universe, [0.95, 1.0, 1.05]
-)  # Original: [0.95, 1.0, 1.05]
-# Increase: Increase enemy health (harder).
+    enemy_health.universe, [0.92, 1.0, 1.08]
+)  # Was [0.95, 1.0, 1.05]
+enemy_health["slight_increase"] = fuzz.trimf(
+    enemy_health.universe, [1.03, 1.15, 1.25]
+)  # New category
 enemy_health["increase"] = fuzz.trimf(
-    enemy_health.universe, [1.03, 1.25, 1.5]
-)  # Original: [1.1, 1.3, 1.5] (CRITICAL: Starts earlier, fixes gap)
+    enemy_health.universe, [1.15, 1.35, 1.6]
+)  # Was [1.03, 1.25, 1.5]
 
 
 # --- Fuzzy Rules ---
-# Define the logic connecting inputs to outputs.
+# More nuanced rules to increase sensitivity
 
 # Rule 1: Player struggling badly (low health, many deaths). Make enemies much easier.
 rule1 = ctrl.Rule(
@@ -103,63 +94,104 @@ rule2 = ctrl.Rule(
 
 # Rule 3: Player finishing quickly with high health. Increase enemy durability.
 rule3 = ctrl.Rule(
-    completion_time["fast"] & health["optimal"], consequent=enemy_health["increase"]
+    completion_time["fast"] & health["optimal"],
+    consequent=[enemy_damage["slight_increase"], enemy_health["increase"]],
 )
 
-# Rule 4: Player dying moderately often. Maintain current difficulty.
+# Rule 4: Player dying moderately often with moderate health. Small adjustment.
 rule4 = ctrl.Rule(
-    deaths["moderate"],
-    consequent=[enemy_damage["keep_same"], enemy_health["keep_same"]],
+    deaths["moderate"] & health["moderate"],
+    consequent=[enemy_damage["slight_decrease"], enemy_health["keep_same"]],
 )
 
 # Rule 5: Player barely surviving and taking a long time. Reduce enemy threat.
 rule5 = ctrl.Rule(
-    health["critical"] & completion_time["slow"], consequent=enemy_damage["decrease"]
+    health["critical"] & completion_time["slow"],
+    consequent=[enemy_damage["decrease"], enemy_health["slight_decrease"]],
 )
 
 # Rule 6: Player dying a lot and taking a long time. Reduce enemy durability.
 rule6 = ctrl.Rule(
-    deaths["many"] & completion_time["slow"], consequent=enemy_health["decrease"]
+    deaths["many"] & completion_time["slow"],
+    consequent=[enemy_damage["decrease"], enemy_health["decrease"]],
 )
 
 # Rule 7: Player finishing quickly with few deaths (likely skilled). Increase enemy threat.
 rule7 = ctrl.Rule(
-    deaths["few"] & completion_time["fast"], consequent=enemy_damage["increase"]
+    deaths["few"] & completion_time["fast"],
+    consequent=[enemy_damage["increase"], enemy_health["slight_increase"]],
 )
 
-# Rule 8: Player has moderate health but died many times. Slightly reduce enemy threat.
+# Rule 8: Player has moderate health but died many times. Reduce enemy threat.
 rule8 = ctrl.Rule(
-    health["moderate"] & deaths["many"], consequent=enemy_damage["slight_decrease"]
+    health["moderate"] & deaths["many"],
+    consequent=[enemy_damage["decrease"], enemy_health["slight_decrease"]],
 )
 
-# Rule 9: Player has moderate health and few deaths. Maintain current difficulty.
+# Rule 9: Player has moderate health and few deaths. Slightly increase difficulty.
 rule9 = ctrl.Rule(
     health["moderate"] & deaths["few"],
-    consequent=[enemy_damage["keep_same"], enemy_health["keep_same"]],
+    consequent=[enemy_damage["slight_increase"], enemy_health["slight_increase"]],
 )
 
 # Rule 10: Player has optimal health, but died many times and took a long time.
-# Good defense but struggles offensively over time? Slightly decrease damage, keep health same.
 rule10 = ctrl.Rule(
     health["optimal"] & deaths["many"] & completion_time["slow"],
-    consequent=[enemy_damage["slight_decrease"], enemy_health["keep_same"]],
+    consequent=[enemy_damage["decrease"], enemy_health["keep_same"]],
 )
 
 # Rule 11: Player has critical health, few deaths, and fast time.
-# This covers the edge case where the player is fast and efficient but vulnerable.
-# Keep enemy health the same, but reduce damage slightly.
 rule11 = ctrl.Rule(
     health["critical"] & deaths["few"] & completion_time["fast"],
     consequent=[enemy_damage["slight_decrease"], enemy_health["keep_same"]],
-)  # Adjusted to slight_decrease damage due to critical health
+)
+
+# Rule 12: Player has moderate health, moderate deaths, and medium time - typical average performance
+rule12 = ctrl.Rule(
+    health["moderate"] & deaths["moderate"] & completion_time["medium"],
+    consequent=[enemy_damage["keep_same"], enemy_health["keep_same"]],
+)
+
+# Rule 13: Player has optimal health but medium time - good survivability but not rushing
+rule13 = ctrl.Rule(
+    health["optimal"] & completion_time["medium"],
+    consequent=[enemy_damage["slight_increase"], enemy_health["slight_increase"]],
+)
+
+# Rule 14: Player has few deaths but slow time - careful but needs encouragement to be faster
+rule14 = ctrl.Rule(
+    deaths["few"] & completion_time["slow"],
+    consequent=[enemy_damage["keep_same"], enemy_health["slight_decrease"]],
+)
+
+# Rule 15: Player has critical health but medium time - they're struggling with health management
+rule15 = ctrl.Rule(
+    health["critical"] & completion_time["medium"],
+    consequent=[enemy_damage["decrease"], enemy_health["keep_same"]],
+)
 
 
 # --- Control System Creation and Simulation ---
 
 # Create the control system with all the rules
-# *Added rule11 to the list*
 difficulty_ctrl = ctrl.ControlSystem(
-    [rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11]
+    [
+        rule1,
+        rule2,
+        rule3,
+        rule4,
+        rule5,
+        rule6,
+        rule7,
+        rule8,
+        rule9,
+        rule10,
+        rule11,
+        rule12,
+        rule13,
+        rule14,
+        rule15,
+    ]
 )
 
 # Create a simulation instance from the control system
@@ -211,7 +243,6 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
         return damage_output, health_output
 
     except KeyError as e:
-        # This block should ideally not be hit now with the added rule, but kept as a safeguard
         print(
             f"Warning: Could not compute output for {e}. Rules might not cover this input combination."
         )
@@ -238,14 +269,13 @@ if __name__ == "__main__":
         print(f"Output: Enemy Damage Multiplier: {damage_mult:.2f}")
         print(f"Output: Enemy Health Multiplier: {health_mult:.2f}\n")
 
-    # --- Original Test Cases ---
+    # --- Test Cases ---
+    print("=== TESTING DYNAMIC DIFFICULTY ADJUSTMENT ===\n")
+
+    # Original Test Cases
     print("--- Original Test Cases ---")
-    run_test(
-        "Test Case 1: Problematic (High Health, Many Deaths, Slow Time)", 100, 7, 360
-    )
-    run_test(
-        "Test Case 2: Original Working (Mod Health, Many Deaths, Slow Time)", 60, 7, 360
-    )
+    run_test("Test Case 1: High Health, Many Deaths, Slow Time", 100, 7, 360)
+    run_test("Test Case 2: Moderate Health, Many Deaths, Slow Time", 60, 7, 360)
     run_test(
         "Test Case 3: Skilled Player (High Health, Few Deaths, Fast Time)", 90, 1, 100
     )
@@ -256,8 +286,8 @@ if __name__ == "__main__":
         450,
     )
 
-    # --- Additional Test Cases ---
-    print("--- Additional Test Cases ---")
+    # Additional Test Cases
+    print("\n--- Additional Test Cases ---")
     run_test(
         "Test Case 5: Average Player (Mod Health, Mod Deaths, Med Time)", 55, 5, 250
     )
@@ -273,50 +303,16 @@ if __name__ == "__main__":
     run_test(
         "Test Case 8: Perfect Run (Optimal Health, Zero Deaths, Fast Time)", 100, 0, 90
     )
-    run_test("Test Case 9: Near Death, Many Deaths, Medium Time", 5, 10, 280)
-    run_test("Test Case 10: Boundary Low (Min Values)", 0, 0, 0)
-    run_test("Test Case 11: Boundary High (Max Values)", 100, 10, 600)
-    run_test("Test Case 12: Moderate Health, Few Deaths, Slow Time", 50, 2, 400)
 
-    # --- Edge Case / Boundary / Transition Tests ---
-    print("\n--- Edge Case / Boundary / Transition Tests ---")
-    # Health Boundaries/Transitions
-    run_test(
-        "Edge Case 13: Health exactly at Critical/Moderate boundary", 30, 5, 200
-    )  # Health=30
-    run_test("Edge Case 14: Health exactly at Moderate peak", 50, 5, 200)  # Health=50
-    run_test(
-        "Edge Case 15: Health exactly at Moderate/Optimal boundary", 70, 5, 200
-    )  # Health=70
-    run_test("Edge Case 16: Health just inside Optimal", 61, 5, 200)  # Health=61
+    # Edge Cases
+    print("\n--- Edge Cases ---")
+    run_test("Edge Case 1: Barely Alive (Health=1)", 1, 5, 300)
+    run_test("Edge Case 2: Maximum Deaths (Deaths=10)", 50, 10, 300)
+    run_test("Edge Case 3: Extremely Fast (Time=30s)", 50, 5, 30)
+    run_test("Edge Case 4: Almost Timeout (Time=590s)", 50, 5, 590)
 
-    # Deaths Boundaries/Transitions
-    run_test(
-        "Edge Case 17: Deaths exactly at Few/Moderate boundary", 2, 80, 200
-    )  # Deaths=2
-    run_test("Edge Case 18: Deaths exactly at Moderate peak", 5, 80, 200)  # Deaths=5
-    run_test(
-        "Edge Case 19: Deaths exactly at Moderate/Many boundary", 7, 80, 200
-    )  # Deaths=7
-    run_test(
-        "Edge Case 20: Deaths just inside Many", 6, 80, 200
-    )  # Deaths=6 (Note: trimf makes 6 = 0 for moderate, 1 for many)
-
-    # Time Boundaries/Transitions
-    run_test(
-        "Edge Case 21: Time exactly at Fast/Medium boundary", 50, 5, 120
-    )  # Time=120
-    run_test("Edge Case 22: Time exactly at Medium peak", 50, 5, 210)  # Time=210
-    run_test(
-        "Edge Case 23: Time exactly at Medium/Slow boundary", 50, 5, 300
-    )  # Time=300
-    run_test("Edge Case 24: Time just inside Slow", 50, 5, 301)  # Time=301
-
-    # Combinations potentially stressing rules
-    run_test("Edge Case 25: Optimal Health, Moderate Deaths, Fast Time", 90, 5, 100)
-    run_test("Edge Case 26: Critical Health, Moderate Deaths, Slow Time", 10, 5, 500)
-    run_test("Edge Case 27: Moderate Health, Few Deaths, Fast Time", 50, 1, 100)
-    run_test("Edge Case 28: Moderate Health, Many Deaths, Medium Time", 50, 9, 250)
-    run_test(
-        "Edge Case 29: Optimal Health, Many Deaths, Fast Time", 90, 10, 115
-    )  # Should trigger decrease? (Rule 10 needs slow time)
+    # Transition Cases
+    print("\n--- Transition Cases ---")
+    run_test("Transition 1: Critical to Moderate Health", 45, 5, 300)
+    run_test("Transition 2: Few to Moderate Deaths", 50, 3, 300)
+    run_test("Transition 3: Fast to Medium Time", 50, 5, 195)
