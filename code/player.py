@@ -199,7 +199,7 @@ class Player(Camera):
             #
             runtime_game_stats.set_health(self.health)
 
-            runtime_game_stats.set_time(level_duration.get_duration)
+            runtime_game_stats.set_time(level_duration.get_duration())
             game_logger.log_level_complete(
                 runtime_game_stats.get_health(),
                 runtime_game_stats.get_deaths(),
