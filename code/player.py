@@ -3,7 +3,8 @@ from camera import Camera
 from settings import *
 import fuzzy_controller
 import random
-
+import sys
+import pygame as pg
 
 class PlayerAttribs:
     def __init__(self):
@@ -247,7 +248,22 @@ class Player(Camera):
             # Reset per-level stats in runtime_game_stats for the new level
             runtime_game_stats.deaths = 0 # Reset deaths for the new level
 
-            self.eng.new_game()
+            if self.eng.player_attribs.num_level == NUM_LEVELS:
+                # All levels completed
+                print("All levels completed! Exiting game.")
+                # Ensure final logs are written if any (total_duration is handled in main.py run())
+                # self.app.is_running = False # This will signal the main loop in main.py to terminate
+
+                # More direct exit after logging
+                total_duration.stop()
+                level_duration.stop() # Ensure this is also stopped
+                game_logger.log_total_duration(total_duration.get_duration())
+                pg.quit()
+                sys.exit()
+            else:
+                # Not the last level, continue to the next level
+                self.eng.player_attribs.num_level %= NUM_LEVELS # Apply modulo for standard level looping if not exiting
+                self.eng.new_game()
         else:
             door.is_moving = True
             self.play(self.sound.open_door)
