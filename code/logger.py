@@ -47,7 +47,7 @@ class GameLogger:
         self.logger.info(
             f"Event: Death | Participant: {self.current_participant} | "
             f"Health: {health} | Deaths: {deaths} | TimeTaken: {time_taken} | "
-            f"EnemyHealth: {enemy_health} | EnemyDamage: {enemy_damage}"
+            f"Health_Mult: {enemy_health} | Damage_Mult: {enemy_damage}"
         )
 
     def log_level_complete(
@@ -62,7 +62,7 @@ class GameLogger:
         self.logger.info(
             f"Event: LevelComplete | Participant: {self.current_participant} | "
             f"Health: {health} | Deaths: {deaths} | TimeTaken: {time_taken} | "
-            f"EnemyHealth: {enemy_health} | EnemyDamage: {enemy_damage}"
+            f"Health_Mult: {enemy_health} | Damage_Mult: {enemy_damage}"
         )
 
     def log_total_duration(self, total_duration: float):
