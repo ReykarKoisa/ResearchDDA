@@ -90,7 +90,8 @@ class Player(Camera):
             self.play(self.sound.player_death)
             runtime_game_stats.increment_death()
             runtime_game_stats.set_time(level_duration.get_duration())
-
+            runtime_game_stats.set_health(0)
+            
             game_logger.log_death(
                 runtime_game_stats.get_health(),
                 runtime_game_stats.get_deaths(),
