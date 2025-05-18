@@ -29,8 +29,8 @@ class InstancedQuadMesh:
             m_model_list += sum(obj.m_model.to_list(), [])
             tex_id_list += [obj.tex_id]
 
-        self.m_model_vbo = self.ctx.buffer(np.array(m_model_list, dtype='float32'))
-        self.tex_id_vbo = self.ctx.buffer(np.array(tex_id_list, dtype='int32'))
+        self.m_model_vbo = self.ctx.buffer(np.array(m_model_list, dtype="float32"))
+        self.tex_id_vbo = self.ctx.buffer(np.array(tex_id_list, dtype="int32"))
 
     def get_vao(self):
         self.update_buffers()
@@ -38,11 +38,15 @@ class InstancedQuadMesh:
         vao = self.ctx.vertex_array(
             self.program,
             [
-                (self.quad_vbo, '4f 2f /v', 'in_position', 'in_uv'),
-                (self.m_model_vbo, '16f /i', 'm_model',),
-                (self.tex_id_vbo, '1i /i', 'in_tex_id'),
+                (self.quad_vbo, "4f 2f /v", "in_position", "in_uv"),
+                (
+                    self.m_model_vbo,
+                    "16f /i",
+                    "m_model",
+                ),
+                (self.tex_id_vbo, "1i /i", "in_tex_id"),
             ],
-            skip_errors=True
+            skip_errors=True,
         )
         return vao
 

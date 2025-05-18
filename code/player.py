@@ -1,6 +1,7 @@
 from itertools import cycle
 from camera import Camera
 from settings import *
+import fuzzy_controller
 import random
 
 
@@ -11,6 +12,7 @@ class PlayerAttribs:
         self.weapons = {ID.KNIFE_0: 1, ID.PISTOL_0: 0, ID.RIFLE_0: 0}
         self.weapon_id = ID.KNIFE_0
         self.num_level = 0
+        self.damage_mult, self.health_mult = 1.0, 1.0
 
     def update(self, player):
         self.health = player.health
@@ -48,15 +50,15 @@ class Player(Camera):
     def handle_events(self, event):
         if event.type == pg.KEYDOWN:
             # door interaction
-            if event.key == KEYS['INTERACT']:
+            if event.key == KEYS["INTERACT"]:
                 self.interact_with_door()
 
             # switch weapon by keys
-            if event.key == KEYS['WEAPON_1']:
+            if event.key == KEYS["WEAPON_1"]:
                 self.switch_weapon(weapon_id=ID.KNIFE_0)
-            elif event.key == KEYS['WEAPON_2']:
+            elif event.key == KEYS["WEAPON_2"]:
                 self.switch_weapon(weapon_id=ID.PISTOL_0)
-            elif event.key == KEYS['WEAPON_3']:
+            elif event.key == KEYS["WEAPON_3"]:
                 self.switch_weapon(weapon_id=ID.RIFLE_0)
 
         # weapon by mouse wheel
@@ -84,19 +86,36 @@ class Player(Camera):
             self.play(self.sound.player_death)
             runtime_game_stats.increment_death()
             runtime_game_stats.set_time(level_duration.get_duration())
+
+            game_logger.log_death(
+                runtime_game_stats.get_health(),
+                runtime_game_stats.get_deaths(),
+                runtime_game_stats.get_time(),
+                self.damage_mult,
+                self.health_mult,
+            )
+
+            self.damage_mult, self.health_mult = (
+                fuzzy_controller.check_DDA_adjust_difficulty(
+                    runtime_game_stats.get_health(),
+                    runtime_game_stats.get_deaths(),
+                    runtime_game_stats.get_time(),
+                )
+            )
+
             pg.time.wait(2000)
             self.eng.player_attribs = PlayerAttribs()
             self.eng.new_game()
 
     def check_hit_on_npc(self):
-        if WEAPON_SETTINGS[self.weapon_id]['miss_probability'] > random.random():
+        if WEAPON_SETTINGS[self.weapon_id]["miss_probability"] > random.random():
             return None
 
         if npc_pos := self.eng.ray_casting.run(
-                start_pos=self.position,
-                direction=self.forward,
-                max_dist=WEAPON_SETTINGS[self.weapon_id]['max_dist'],
-                npc_to_player_flag=False
+            start_pos=self.position,
+            direction=self.forward,
+            max_dist=WEAPON_SETTINGS[self.weapon_id]["max_dist"],
+            npc_to_player_flag=False,
         ):
             npc = self.eng.level_map.npc_map[npc_pos]
             npc.get_damage()
@@ -113,7 +132,7 @@ class Player(Camera):
             self.play(self.sound.player_attack[ID.KNIFE_0])
 
         elif self.ammo:
-            consumption = WEAPON_SETTINGS[self.weapon_id]['ammo_consumption']
+            consumption = WEAPON_SETTINGS[self.weapon_id]["ammo_consumption"]
             if not self.is_shot and self.ammo >= consumption:
                 self.is_shot = True
                 self.check_hit_on_npc()
@@ -133,11 +152,11 @@ class Player(Camera):
         item = self.item_map[self.tile_pos]
         #
         if item.tex_id == ID.MED_KIT:
-            self.health += ITEM_SETTINGS[ID.MED_KIT]['value']
+            self.health += ITEM_SETTINGS[ID.MED_KIT]["value"]
             self.health = min(self.health, MAX_HEALTH_VALUE)
         #
         elif item.tex_id == ID.AMMO:
-            self.ammo += ITEM_SETTINGS[ID.AMMO]['value']
+            self.ammo += ITEM_SETTINGS[ID.AMMO]["value"]
             self.ammo = min(self.ammo, MAX_AMMO_VALUE)
         #
         elif item.tex_id == ID.PISTOL_ICON:
@@ -175,10 +194,24 @@ class Player(Camera):
             pg.time.wait(300)
             #
             runtime_game_stats.set_health(self.health)
-            
+
             runtime_game_stats.set_time(level_duration.get_duration)
+            game_logger.log_level_complete(
+                runtime_game_stats.get_health(),
+                runtime_game_stats.get_deaths(),
+                runtime_game_stats.get_time(),
+                self.damage_mult,
+                self.health_mult,
+            )
             level_duration.start()
 
+            self.damage_mult, self.health_mult = (
+                fuzzy_controller.check_DDA_adjust_difficulty(
+                    runtime_game_stats.get_health(),
+                    runtime_game_stats.get_deaths(),
+                    runtime_game_stats.get_time(),
+                )
+            )
             self.eng.player_attribs.update(player=self)
             self.eng.player_attribs.num_level += 1
             self.eng.player_attribs.num_level %= NUM_LEVELS
@@ -199,13 +232,13 @@ class Player(Camera):
         vel = PLAYER_SPEED * self.app.delta_time
         next_step = glm.vec2()
         #
-        if key_state[KEYS['FORWARD']]:
+        if key_state[KEYS["FORWARD"]]:
             next_step += self.move_forward(vel)
-        if key_state[KEYS['BACK']]:
+        if key_state[KEYS["BACK"]]:
             next_step += self.move_back(vel)
-        if key_state[KEYS['STRAFE_R']]:
+        if key_state[KEYS["STRAFE_R"]]:
             next_step += self.move_right(vel)
-        if key_state[KEYS['STRAFE_L']]:
+        if key_state[KEYS["STRAFE_L"]]:
             next_step += self.move_left(vel)
         #
         self.move(next_step=next_step)
@@ -219,12 +252,16 @@ class Player(Camera):
 
     def is_collide(self, dx=0, dz=0):
         int_pos = (
-            int(self.position.x + dx + (
-                PLAYER_SIZE if dx > 0 else -PLAYER_SIZE if dx < 0 else 0)
-                ),
-            int(self.position.z + dz + (
-                PLAYER_SIZE if dz > 0 else -PLAYER_SIZE if dz < 0 else 0)
-                )
+            int(
+                self.position.x
+                + dx
+                + (PLAYER_SIZE if dx > 0 else -PLAYER_SIZE if dx < 0 else 0)
+            ),
+            int(
+                self.position.z
+                + dz
+                + (PLAYER_SIZE if dz > 0 else -PLAYER_SIZE if dz < 0 else 0)
+            ),
         )
         # check doors
         if int_pos in self.door_map:

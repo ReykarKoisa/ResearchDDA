@@ -19,4 +19,3 @@ class GameObject:
         m_model = glm.rotate(m_model, self.rot, glm.vec3(0, 1, 0))
         m_model = glm.scale(m_model, self.scale)
         return m_model
-

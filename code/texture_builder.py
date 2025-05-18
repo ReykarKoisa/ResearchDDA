@@ -10,21 +10,25 @@ class TextureArrayBuilder:
         if should_build:
             # main textures
             self.build(
-                load_path='assets/textures',
-                texture_array_path='assets/texture_array/texture_array.png',
-                sprite_sheet_path='assets/sprite_sheet/sprite_sheet.png'
+                load_path="assets/textures",
+                texture_array_path="assets/texture_array/texture_array.png",
+                sprite_sheet_path="assets/sprite_sheet/sprite_sheet.png",
             )
 
-    def build(self, load_path, texture_array_path, sprite_sheet_path, tex_size=TEX_SIZE):
+    def build(
+        self, load_path, texture_array_path, sprite_sheet_path, tex_size=TEX_SIZE
+    ):
         texture_paths = [
-            item for item in pathlib.Path(load_path).rglob('*.png') if item.is_file()
+            item for item in pathlib.Path(load_path).rglob("*.png") if item.is_file()
         ]
         texture_paths = sorted(
             texture_paths,
-            key=lambda tex_path: int(re.search('\\d+', str(tex_path)).group(0))
+            key=lambda tex_path: int(re.search("\\d+", str(tex_path)).group(0)),
         )
         # empty tex array
-        texture_array = pg.Surface([tex_size, tex_size * len(texture_paths)], pg.SRCALPHA, 32)
+        texture_array = pg.Surface(
+            [tex_size, tex_size * len(texture_paths)], pg.SRCALPHA, 32
+        )
 
         # empty sprite_sheet
         size = int(math.sqrt(len(texture_paths))) + 1
