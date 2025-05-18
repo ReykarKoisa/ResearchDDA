@@ -2,6 +2,7 @@ from settings import *
 import random
 from game_objects.game_object import GameObject
 from game_objects.item import Item
+from typing import Tuple
 
 
 class NPC(GameObject):

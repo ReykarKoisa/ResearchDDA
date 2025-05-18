@@ -1,10 +1,12 @@
 from itertools import cycle
 from camera import Camera
 from settings import *
-import fuzzy_controller
+import hooks.fuzzy_controller as fuzzy_controller
+from hook_objects import level_duration, total_duration, game_logger
 import random
 import sys
 import pygame as pg
+from typing import Tuple
 
 class PlayerAttribs:
     def __init__(self):
