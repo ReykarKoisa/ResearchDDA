@@ -33,7 +33,7 @@ class Engine:
         self.player = Player(self)
         self.shader_program = ShaderProgram(self)
         self.level_map = LevelMap(
-            self, tmx_file=f'level_{self.player_attribs.num_level}.tmx'
+            self, tmx_file=f"level_{self.player_attribs.num_level}.tmx"
         )
         self.ray_casting = RayCasting(self)
         self.path_finder = PathFinder(self)

@@ -7,7 +7,16 @@ class PathFinder:
         self.eng = eng
         self.level_map = eng.level_map
         self.wall_map = eng.level_map.wall_map
-        self.ways = ([-1, 0], [0, -1], [1, 0], [0, 1], [-1, -1], [1, -1], [1, 1], [-1, 1])
+        self.ways = (
+            [-1, 0],
+            [0, -1],
+            [1, 0],
+            [0, 1],
+            [-1, -1],
+            [1, -1],
+            [1, 1],
+            [-1, 1],
+        )
         self.graph = {}
         self.update_graph()
 
@@ -33,17 +42,24 @@ class PathFinder:
             next_nodes = self.graph[cur_node]
 
             for next_node in next_nodes:
-                if next_node not in visited and next_node not in self.eng.level_map.npc_map:
+                if (
+                    next_node not in visited
+                    and next_node not in self.eng.level_map.npc_map
+                ):
                     queue.append(next_node)
                     visited[next_node] = cur_node
         return visited
 
     def get_next_nodes(self, x, y):
         return [
-            (x + dx, y + dy) for dx, dy in self.ways if (x + dx, y + dy) not in self.wall_map
+            (x + dx, y + dy)
+            for dx, dy in self.ways
+            if (x + dx, y + dy) not in self.wall_map
         ]
 
     def update_graph(self):
         for y in range(self.level_map.depth):
             for x in range(self.level_map.width):
-                self.graph[(x, y)] = self.graph.get((x, y), []) + self.get_next_nodes(x, y)
+                self.graph[(x, y)] = self.graph.get((x, y), []) + self.get_next_nodes(
+                    x, y
+                )

@@ -9,14 +9,16 @@ class Game:
         pg.init()
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, MAJOR_VERSION)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, MINOR_VERSION)
-        pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
+        pg.display.gl_set_attribute(
+            pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE
+        )
         pg.display.gl_set_attribute(pg.GL_DEPTH_SIZE, DEPTH_SIZE)
 
         pg.display.set_mode(WIN_RES, flags=pg.OPENGL | pg.DOUBLEBUF)
         self.ctx = mgl.create_context()
 
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.BLEND)
-        self.ctx.gc_mode = 'auto'
+        self.ctx.gc_mode = "auto"
 
         self.clock = pg.time.Clock()
         self.delta_time = 0
@@ -44,7 +46,7 @@ class Game:
         self.delta_time = self.clock.tick()
         self.time = pg.time.get_ticks() * 0.001
         self.fps_value = int(self.clock.get_fps())
-        pg.display.set_caption(f'{self.fps_value}')
+        pg.display.set_caption(f"{self.fps_value}")
 
     def render(self):
         self.ctx.clear(color=BG_COLOR)
@@ -55,7 +57,9 @@ class Game:
         self.anim_trigger, self.sound_trigger = False, False
 
         for event in pg.event.get():
-            if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+            if event.type == pg.QUIT or (
+                event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
+            ):
                 self.is_running = False
             #
             if event.type == self.anim_event:
@@ -67,7 +71,7 @@ class Game:
             self.engine.handle_events(event=event)
 
     def run(self):
-        total_duration.start()#This is for Total Duration
+        total_duration.start()  # This is for Total Duration
         level_duration.start()
         while self.is_running:
             self.handle_events()
@@ -75,11 +79,11 @@ class Game:
             self.render()
         total_duration.stop()
         level_duration.stop()
-        game_logger.log_total_duration(total_duration.get_duration)
+        game_logger.log_total_duration(total_duration.get_duration())
         pg.quit()
         sys.exit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     game = Game()
     game.run()

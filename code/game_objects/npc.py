@@ -1,27 +1,22 @@
 from settings import *
-import fuzzy_controller
 import random
 from game_objects.game_object import GameObject
 from game_objects.item import Item
 
-damage_mult, health_mult = fuzzy_controller.check_DDA_adjust_difficulty(
-            runtime_game_stats.get_health(),
-            runtime_game_stats.get_deaths(),
-            runtime_game_stats.get_time(),
-        )
+
 class NPC(GameObject):
     def __init__(self, level_map, tex_id, x, z):
         super().__init__(level_map, tex_id, x, z)
         self.level_map = level_map
         self.player = self.eng.player
         self.npc_id = tex_id
-        
+
         self.scale = NPC_SETTINGS[self.npc_id]["scale"]
         self.speed = NPC_SETTINGS[self.npc_id]["speed"]
         self.size = NPC_SETTINGS[self.npc_id]["size"]
         self.attack_dist = NPC_SETTINGS[self.npc_id]["attack_dist"]
-        self.health = NPC_SETTINGS[self.npc_id]["health"] * health_mult
-        self.damage = NPC_SETTINGS[self.npc_id]["damage"] * damage_mult
+        self.health = NPC_SETTINGS[self.npc_id]["health"] * self.player.health_mult
+        self.damage = NPC_SETTINGS[self.npc_id]["damage"] * self.player.damage_mult
         self.hit_probability = NPC_SETTINGS[self.npc_id]["hit_probability"]
         self.drop_item = NPC_SETTINGS[self.npc_id]["drop_item"]
         #

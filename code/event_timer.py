@@ -1,5 +1,6 @@
 from pygame.time import get_ticks
 
+
 class EventTimer:
     def __init__(self):
         self.start_time = None
@@ -16,11 +17,10 @@ class EventTimer:
     def get_duration(self):
         if self.start_time is None:
             return 0
-        if self.is_running(): #if timer is running
-            return (get_ticks() - self.start_time) / 1000  
-        else: # if the timer is stopped
-            return (self.end_time - self.start_time) / 1000  
-
+        if self.is_running():  # if timer is running
+            return (get_ticks() - self.start_time) / 1000
+        else:  # if the timer is stopped
+            return (self.end_time - self.start_time) / 1000
 
     def is_running(self):
         return self.start_time is not None and self.end_time is None

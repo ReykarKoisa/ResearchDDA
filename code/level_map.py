@@ -6,16 +6,19 @@ from game_objects.npc import NPC
 
 
 class LevelMap:
-    def __init__(self, eng, tmx_file='test.tmx'):
+    def __init__(self, eng, tmx_file="test.tmx"):
         self.eng = eng
-        self.tiled_map = pytmx.TiledMap(f'resources/levels/{tmx_file}')
+        self.tiled_map = pytmx.TiledMap(f"resources/levels/{tmx_file}")
         self.gid_map = self.tiled_map.tiledgidmap
 
         self.width = self.tiled_map.width
         self.depth = self.tiled_map.height
 
         self.wall_map, self.floor_map, self.ceil_map = {}, {}, {}
-        self.door_map, self.item_map,  = {}, {}
+        (
+            self.door_map,
+            self.item_map,
+        ) = {}, {}
         self.npc_map, self.npc_list = {}, []
         #
         self.parse_level()
@@ -25,14 +28,14 @@ class LevelMap:
 
     def parse_level(self):
         # get player pos
-        player = self.tiled_map.get_layer_by_name('player').pop()
+        player = self.tiled_map.get_layer_by_name("player").pop()
         player_pos = glm.vec3(player.x / TEX_SIZE, PLAYER_HEIGHT, player.y / TEX_SIZE)
         # set pos
         self.eng.player.position = player_pos
 
-        walls = self.tiled_map.get_layer_by_name('walls')
-        floors = self.tiled_map.get_layer_by_name('floors')
-        ceilings = self.tiled_map.get_layer_by_name('ceilings')
+        walls = self.tiled_map.get_layer_by_name("walls")
+        floors = self.tiled_map.get_layer_by_name("floors")
+        ceilings = self.tiled_map.get_layer_by_name("ceilings")
 
         for ix in range(self.width):
             for iz in range(self.depth):
@@ -49,7 +52,7 @@ class LevelMap:
                     self.ceil_map[(ix, iz)] = self.get_id(gid)
 
         # get doors
-        door_objects = self.tiled_map.get_layer_by_name('doors')
+        door_objects = self.tiled_map.get_layer_by_name("doors")
         for obj in door_objects:
             # door hash map
             pos = int(obj.x / TEX_SIZE), int(obj.y / TEX_SIZE)
@@ -57,7 +60,7 @@ class LevelMap:
             self.door_map[pos] = door
 
         # get items
-        items = self.tiled_map.get_layer_by_name('items')
+        items = self.tiled_map.get_layer_by_name("items")
         for obj in items:
             # item hash map
             pos = int(obj.x / TEX_SIZE), int(obj.y / TEX_SIZE)
@@ -65,7 +68,7 @@ class LevelMap:
             self.item_map[pos] = item
 
         # get npc
-        npc = self.tiled_map.get_layer_by_name('npc')
+        npc = self.tiled_map.get_layer_by_name("npc")
         for obj in npc:
             # npc map
             pos = int(obj.x / TEX_SIZE), int(obj.y / TEX_SIZE)
