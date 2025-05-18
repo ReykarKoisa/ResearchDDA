@@ -94,8 +94,8 @@ rule2 = ctrl.Rule(
 
 # Rule 3: Player finishing quickly with high health. Increase enemy durability.
 rule3 = ctrl.Rule(
-    completion_time["fast"] & health["optimal"], 
-    consequent=[enemy_damage["slight_increase"], enemy_health["increase"]]
+    completion_time["fast"] & health["optimal"],
+    consequent=[enemy_damage["slight_increase"], enemy_health["increase"]],
 )
 
 # Rule 4: Player dying moderately often with moderate health. Small adjustment.
@@ -106,26 +106,26 @@ rule4 = ctrl.Rule(
 
 # Rule 5: Player barely surviving and taking a long time. Reduce enemy threat.
 rule5 = ctrl.Rule(
-    health["critical"] & completion_time["slow"], 
-    consequent=[enemy_damage["decrease"], enemy_health["slight_decrease"]]
+    health["critical"] & completion_time["slow"],
+    consequent=[enemy_damage["decrease"], enemy_health["slight_decrease"]],
 )
 
 # Rule 6: Player dying a lot and taking a long time. Reduce enemy durability.
 rule6 = ctrl.Rule(
-    deaths["many"] & completion_time["slow"], 
-    consequent=[enemy_damage["decrease"], enemy_health["decrease"]]
+    deaths["many"] & completion_time["slow"],
+    consequent=[enemy_damage["decrease"], enemy_health["decrease"]],
 )
 
 # Rule 7: Player finishing quickly with few deaths (likely skilled). Increase enemy threat.
 rule7 = ctrl.Rule(
-    deaths["few"] & completion_time["fast"], 
-    consequent=[enemy_damage["increase"], enemy_health["slight_increase"]]
+    deaths["few"] & completion_time["fast"],
+    consequent=[enemy_damage["increase"], enemy_health["slight_increase"]],
 )
 
 # Rule 8: Player has moderate health but died many times. Reduce enemy threat.
 rule8 = ctrl.Rule(
-    health["moderate"] & deaths["many"], 
-    consequent=[enemy_damage["decrease"], enemy_health["slight_decrease"]]
+    health["moderate"] & deaths["many"],
+    consequent=[enemy_damage["decrease"], enemy_health["slight_decrease"]],
 )
 
 # Rule 9: Player has moderate health and few deaths. Slightly increase difficulty.
@@ -175,8 +175,23 @@ rule15 = ctrl.Rule(
 
 # Create the control system with all the rules
 difficulty_ctrl = ctrl.ControlSystem(
-    [rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, 
-     rule11, rule12, rule13, rule14, rule15]
+    [
+        rule1,
+        rule2,
+        rule3,
+        rule4,
+        rule5,
+        rule6,
+        rule7,
+        rule8,
+        rule9,
+        rule10,
+        rule11,
+        rule12,
+        rule13,
+        rule14,
+        rule15,
+    ]
 )
 
 # Create a simulation instance from the control system
@@ -257,15 +272,11 @@ if __name__ == "__main__":
     # --- Test Cases ---
     print("=== TESTING DYNAMIC DIFFICULTY ADJUSTMENT ===\n")
     print("(Note: Multipliers now range from 0.3 to 1.8 for more dramatic adjustments)")
-    
+
     # Original Test Cases
     print("\n--- Original Test Cases ---")
-    run_test(
-        "Test Case 1: High Health, Many Deaths, Slow Time", 100, 7, 360
-    )
-    run_test(
-        "Test Case 2: Moderate Health, Many Deaths, Slow Time", 60, 7, 360
-    )
+    run_test("Test Case 1: High Health, Many Deaths, Slow Time", 100, 7, 360)
+    run_test("Test Case 2: Moderate Health, Many Deaths, Slow Time", 60, 7, 360)
     run_test(
         "Test Case 3: Skilled Player (High Health, Few Deaths, Fast Time)", 90, 1, 100
     )
@@ -293,7 +304,7 @@ if __name__ == "__main__":
     run_test(
         "Test Case 8: Perfect Run (Optimal Health, Zero Deaths, Fast Time)", 100, 0, 90
     )
-    
+
     # Comparison to Show Sensitivity
     print("\n--- Showing Sensitivity to Small Performance Changes ---")
     run_test("Base Performance", 50, 5, 300)
@@ -303,7 +314,7 @@ if __name__ == "__main__":
     run_test("Slightly Worse Health (-10)", 40, 5, 300)
     run_test("Slightly More Deaths (+2)", 50, 7, 300)
     run_test("Slightly Slower Time (+60s)", 50, 5, 360)
-    
+
     # Edge Cases
     print("\n--- Edge Cases ---")
     run_test("Edge Case 1: Barely Alive (Health=1)", 1, 5, 300)
