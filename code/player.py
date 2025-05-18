@@ -2,7 +2,7 @@ from itertools import cycle
 from camera import Camera
 from settings import *
 import hooks.fuzzy_controller as fuzzy_controller
-from hook_objects import level_duration, total_duration, game_logger
+from hook_objects import level_duration, total_duration, game_logger, runtime_game_stats
 import random
 import sys
 import pygame as pg
