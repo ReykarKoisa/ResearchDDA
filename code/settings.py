@@ -1,7 +1,12 @@
 import math
+import os
 import glm
 import pygame as pg
 from texture_id import ID
+
+# logging
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
 
 # Dynamic Difficulty Adjustment
 DDA_ON = True
