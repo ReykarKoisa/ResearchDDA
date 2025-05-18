@@ -17,6 +17,9 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 game_logger = GameLogger(directory=LOG_DIR, base_filename="game")
 
+# Dynamic Difficulty Adjustment
+DDA_ON = True
+
 # opengl
 MAJOR_VERSION = 3
 MINOR_VERSION = 3
