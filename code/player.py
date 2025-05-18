@@ -12,7 +12,7 @@ class PlayerAttribs:
         self.weapons = {ID.KNIFE_0: 1, ID.PISTOL_0: 0, ID.RIFLE_0: 0}
         self.weapon_id = ID.KNIFE_0
         self.num_level = 0
-        self.damage_mult, self.health_mult = 1.0, 1.0
+        
 
     def update(self, player):
         self.health = player.health
@@ -31,6 +31,10 @@ class Player(Camera):
 
         # these maps will update when instantiated LevelMap
         self.door_map, self.wall_map, self.item_map = None, None, None
+
+        # DDA multipliers
+        self.damage_mult = 1.0
+        self.health_mult = 1.0
 
         # attribs
         self.health = self.eng.player_attribs.health

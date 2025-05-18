@@ -16,7 +16,7 @@ class NPC(GameObject):
         self.size = NPC_SETTINGS[self.npc_id]["size"]
         self.attack_dist = NPC_SETTINGS[self.npc_id]["attack_dist"]
         self.health = NPC_SETTINGS[self.npc_id]["health"] * self.player.health_mult if DDA_ON else NPC_SETTINGS[self.npc_id]["health"]
-        self.damage = NPC_SETTINGS[self.npc_id]["damage"] * self.player.damage_mult if DDA_ON else NPC_SETTINGS[self.npc_id]["health"]
+        self.damage = NPC_SETTINGS[self.npc_id]["damage"] * self.player.damage_mult if DDA_ON else NPC_SETTINGS[self.npc_id]["damage"]
         self.hit_probability = NPC_SETTINGS[self.npc_id]["hit_probability"]
         self.drop_item = NPC_SETTINGS[self.npc_id]["drop_item"]
         #
