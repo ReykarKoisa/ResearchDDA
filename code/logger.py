@@ -40,14 +40,14 @@ class GameLogger:
         health: float,
         deaths: int,
         time_taken: float,
-        enemy_health: float,
-        enemy_damage: float,
+        health_mult: float,
+        damage_mult: float,
     ):
         """Log a death event for the current participant with game metrics."""
         self.logger.info(
             f"Event: Death | Participant: {self.current_participant} | "
             f"Health: {health} | Deaths: {deaths} | TimeTaken: {time_taken} | "
-            f"Health_Mult: {enemy_health} | Damage_Mult: {enemy_damage}"
+            f"HealthMult: {health_mult} | DamageMult: {damage_mult}"
         )
 
     def log_level_complete(
@@ -55,14 +55,14 @@ class GameLogger:
         health: float,
         deaths: int,
         time_taken: float,
-        enemy_health: float,
-        enemy_damage: float,
+        health_mult: float,
+        damage_mult: float,
     ):
         """Log a level completion event for the current participant."""
         self.logger.info(
             f"Event: LevelComplete | Participant: {self.current_participant} | "
             f"Health: {health} | Deaths: {deaths} | TimeTaken: {time_taken} | "
-            f"Health_Mult: {enemy_health} | Damage_Mult: {enemy_damage}"
+            f"HealthMult: {health_mult} | DamageMult: {damage_mult}"
         )
 
     def log_total_duration(self, total_duration: float):
@@ -74,10 +74,10 @@ class GameLogger:
 # logger = GameLogger(directory='logs', base_filename='game')
 # # Automatically creates 'logs/game_participant_1.log' or next available
 # logger.log_death(level=1, health=100, deaths=1, time_taken=35.7,
-#                  enemy_health=80, enemy_damage=15)
+#                  health_mult=80, damage_mult=15)
 # logger.log_level_complete(level=1, health=75, deaths=1,
-#                           time_taken=47.2, enemy_health=60,
-#                           enemy_damage=18)
+#                           time_taken=47.2, health_mult=60,
+#                           damage_mult=18)
 # logger.log_total_duration(120.5)
 
 # For a second run, it'll create 'logs/game_participant_2.log' automatically.
