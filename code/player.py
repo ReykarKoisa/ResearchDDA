@@ -266,19 +266,15 @@ class Player(Camera):
                 new_health_mult  # Overwrite with NEW mults for next level
             )
 
-            self.eng.player_attribs.num_level += 1
-            self.eng.player_attribs.num_level %= NUM_LEVELS
+            self.eng.player_attribs.num_level += 1  # Increment to signify completion of current level / moving to next
 
-            # Reset per-level stats in runtime_game_stats for the new level
-            runtime_game_stats.deaths = 0  # Reset deaths for the new level
+            # Reset per-level stats in runtime_game_stats for the new level (or before exiting)
+            runtime_game_stats.deaths = 0
 
+            # Check if the incremented level count means all levels are done
             if self.eng.player_attribs.num_level == NUM_LEVELS:
                 # All levels completed
                 print("All levels completed! Exiting game.")
-                # Ensure final logs are written if any (total_duration is handled in main.py run())
-                # self.app.is_running = False # This will signal the main loop in main.py to terminate
-
-                # More direct exit after logging
                 total_duration.stop()
                 level_duration.stop()  # Ensure this is also stopped
                 game_logger.log_total_duration(total_duration.get_duration())
@@ -286,9 +282,9 @@ class Player(Camera):
                 sys.exit()
             else:
                 # Not the last level, continue to the next level
-                self.eng.player_attribs.num_level %= (
-                    NUM_LEVELS  # Apply modulo for standard level looping if not exiting
-                )
+                # Apply modulo for standard level looping if not exiting
+                # This ensures num_level wraps around correctly for the next level.
+                self.eng.player_attribs.num_level %= NUM_LEVELS
                 self.eng.new_game()
         else:
             door.is_moving = True
