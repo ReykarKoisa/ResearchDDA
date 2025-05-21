@@ -118,8 +118,8 @@ rule6 = ctrl.Rule(
 
 # Rule 7: Player finishing quickly with few deaths (likely skilled). Increase enemy threat.
 rule7 = ctrl.Rule(
-    deaths["few"] & completion_time["fast"],
-    consequent=[enemy_damage["increase"], enemy_health["slight_increase"]],
+    health["optimal"] & deaths["few"] & completion_time["fast"], # Added health["optimal"]
+    consequent=[enemy_damage["increase"], enemy_health["increase"]], # Made consequence stronger for true skill
 )
 
 # Rule 8: Player has moderate health but died many times. Reduce enemy threat.
@@ -143,7 +143,7 @@ rule10 = ctrl.Rule(
 # Rule 11: Player has critical health, few deaths, and fast time.
 rule11 = ctrl.Rule(
     health["critical"] & deaths["few"] & completion_time["fast"],
-    consequent=[enemy_damage["slight_decrease"], enemy_health["keep_same"]],
+    consequent=[enemy_damage["decrease"], enemy_health["slight_decrease"]], # Stronger decrease
 )
 
 # Rule 12: Player has moderate health, moderate deaths, and medium time - typical average performance
@@ -169,6 +169,12 @@ rule15 = ctrl.Rule(
     health["critical"] & completion_time["medium"],
     consequent=[enemy_damage["decrease"], enemy_health["keep_same"]],
 )
+
+rule16 = ctrl.Rule(
+    health["critical"] & deaths["moderate"] & completion_time["medium"],
+    consequent=[enemy_damage["decrease"], enemy_health["slight_decrease"]] # More help than Rule 15
+)
+
 
 
 # --- Control System Creation ---
