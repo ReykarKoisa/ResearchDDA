@@ -286,6 +286,7 @@ class Player(Camera):
                 # This ensures num_level wraps around correctly for the next level.
                 self.eng.player_attribs.num_level %= NUM_LEVELS
                 self.eng.new_game()
+                level_duration.start()
         else:
             door.is_moving = True
             self.play(self.sound.open_door)
