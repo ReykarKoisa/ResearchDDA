@@ -171,9 +171,7 @@ rule15 = ctrl.Rule(
 )
 
 
-# --- Control System Creation and Simulation ---
-
-# Create the control system with all the rules
+# --- Control System Creation ---
 difficulty_ctrl = ctrl.ControlSystem(
     [
         rule1,
@@ -194,9 +192,6 @@ difficulty_ctrl = ctrl.ControlSystem(
     ]
 )
 
-# Create a simulation instance from the control system
-difficulty_sim = ctrl.ControlSystemSimulation(difficulty_ctrl)
-
 
 def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
     """
@@ -214,6 +209,8 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
         Returns (1.0, 1.0) if computation fails for any reason.
     """
     try:
+        # Create a fresh simulation instance for each call to avoid state carryover
+        difficulty_sim = ctrl.ControlSystemSimulation(difficulty_ctrl)
         # Pass inputs to the ControlSystemSimulation
         # Clip inputs to ensure they are within the defined universe ranges
         difficulty_sim.input["health"] = np.clip(player_health, 0, 100)
