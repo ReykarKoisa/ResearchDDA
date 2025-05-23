@@ -94,7 +94,7 @@ class Player(Camera):
         if self.health <= 0:
             self.play(self.sound.player_death)
             runtime_game_stats.increment_death()
-            runtime_game_stats.set_time(level_duration.get_duration())
+            runtime_game_stats.set_time(total_duration.get_duration())
             runtime_game_stats.set_health(
                 0
             )  # Health at the moment of death for DDA calculation
@@ -233,7 +233,7 @@ class Player(Camera):
 
             runtime_game_stats.set_health(self.health)  # Health at level end
             runtime_game_stats.set_time(
-                level_duration.get_duration()
+                total_duration.get_duration()
             )  # Time for this level
 
             # Log level completion with multipliers active during this level
@@ -267,9 +267,6 @@ class Player(Camera):
             )
 
             self.eng.player_attribs.num_level += 1  # Increment to signify completion of current level / moving to next
-
-            # Reset per-level stats in runtime_game_stats for the new level (or before exiting)
-            runtime_game_stats.deaths = 0
 
             # Check if the incremented level count means all levels are done
             if self.eng.player_attribs.num_level == NUM_LEVELS:
