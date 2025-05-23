@@ -18,20 +18,19 @@ enemy_health = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_health", defuz
 
 # --- Membership Functions for Inputs ---
 # Health: Lower is worse, higher is better.
-health["critical"] = fuzz.trimf(health.universe, [0, 25, 60])
+health["critical"] = fuzz.trapmf(health.universe, [0, 0, 25, 60])
 health["moderate"] = fuzz.trimf(health.universe, [30, 60, 85])
-health["optimal"] = fuzz.trimf(health.universe, [60, 85, 100])
+health["optimal"] = fuzz.trapmf(health.universe, [60, 85, 100, 100])
 
 # Deaths: Lower is better, higher is worse.
-deaths["few"] = fuzz.trimf(deaths.universe, [0, 1, 5])
+deaths["few"] = fuzz.trapmf(deaths.universe, [0, 0, 1, 5])
 deaths["moderate"] = fuzz.trimf(deaths.universe, [1, 5, 8])
-deaths["many"] = fuzz.trimf(deaths.universe, [5, 10, 10])
+deaths["many"] = fuzz.trapmf(deaths.universe, [5, 10, 10, 10])
 
 # Completion Time: Lower (faster) is generally better.
-# Adjusted to be more sensitive to shorter times
-completion_time["fast"] = fuzz.trimf(completion_time.universe, [0, 45, 150]) # Original: [0, 90, 240]
-completion_time["medium"] = fuzz.trimf(completion_time.universe, [120, 300, 450]) # Adjusted start to avoid too much overlap with new 'fast'
-completion_time["slow"] = fuzz.trimf(completion_time.universe, [300, 480, 600])
+completion_time["fast"] = fuzz.trapmf(completion_time.universe, [0, 0, 45, 150])
+completion_time["medium"] = fuzz.trimf(completion_time.universe, [120, 300, 450])
+completion_time["slow"] = fuzz.trapmf(completion_time.universe, [300, 480, 600, 600])
 
 # --- Membership Functions for Outputs ---
 # Enemy Damage Adjustment:
