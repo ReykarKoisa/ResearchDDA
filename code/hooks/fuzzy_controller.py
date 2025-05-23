@@ -11,8 +11,10 @@ deaths = ctrl.Antecedent(np.arange(0, 11, 1), "deaths")
 completion_time = ctrl.Antecedent(np.arange(0, 601, 1), "completion_time")
 
 # Define output variables (enemy adjustment multipliers)
-enemy_damage = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_damage")
-enemy_health = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_health")
+#enemy_damage = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_damage")
+#enemy_health = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_health")
+enemy_damage = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_damage", defuzzify_method='bisector') # Try 'bisector'
+enemy_health = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_health", defuzzify_method='bisector') # Try 'bisector'
 
 # --- Membership Functions for Inputs ---
 # Health: Lower is worse, higher is better.
@@ -26,8 +28,9 @@ deaths["moderate"] = fuzz.trimf(deaths.universe, [1, 5, 8])
 deaths["many"] = fuzz.trimf(deaths.universe, [5, 10, 10])
 
 # Completion Time: Lower (faster) is generally better.
-completion_time["fast"] = fuzz.trimf(completion_time.universe, [0, 90, 240])
-completion_time["medium"] = fuzz.trimf(completion_time.universe, [150, 300, 450])
+# Adjusted to be more sensitive to shorter times
+completion_time["fast"] = fuzz.trimf(completion_time.universe, [0, 45, 150]) # Original: [0, 90, 240]
+completion_time["medium"] = fuzz.trimf(completion_time.universe, [120, 300, 450]) # Adjusted start to avoid too much overlap with new 'fast'
 completion_time["slow"] = fuzz.trimf(completion_time.universe, [300, 480, 600])
 
 # --- Membership Functions for Outputs ---
@@ -45,8 +48,7 @@ enemy_health["keep_same"] = fuzz.trimf(enemy_health.universe, [0.9, 1.0, 1.1])
 enemy_health["slight_increase"] = fuzz.trimf(enemy_health.universe, [1.05, 1.25, 1.4])
 enemy_health["increase"] = fuzz.trimf(enemy_health.universe, [1.3, 1.55, 1.8])
 
-# --- New Fuzzy Rules (All 3-variable) ---
-
+# --- Fuzzy Rules (All 3-variable) ---
 # Category I: Player Health is Optimal
 # I.A: Optimal Health, Few Deaths
 r01_OptH_FewD_FastT = ctrl.Rule(health['optimal'] & deaths['few'] & completion_time['fast'],
@@ -145,16 +147,50 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
     Returns:
       - tuple (float, float): (enemy_damage_multiplier, enemy_health_multiplier)
     """
+    damage_output = 1.0  # Default to 1.0
+    health_output = 1.0  # Default to 1.0
+
+    # --- START DIAGNOSTIC PRINTS ---
+    print(f"\n--- Fuzzy Calculation Start ---")
+    print(f"Received Inputs: Health={player_health}, Deaths={player_deaths}, Time={level_time_sec}")
+
+    clipped_health = np.clip(player_health, 0, 100)
+    clipped_deaths = np.clip(player_deaths, 0, 10)
+    clipped_time = np.clip(level_time_sec, 0, 600)
+    print(f"Clipped Inputs: Health={clipped_health}, Deaths={clipped_deaths}, Time={clipped_time}")
+    # --- END DIAGNOSTIC PRINTS ---
+
     try:
         difficulty_sim = ctrl.ControlSystemSimulation(difficulty_ctrl)
-        difficulty_sim.input["health"] = np.clip(player_health, 0, 100)
-        difficulty_sim.input["deaths"] = np.clip(player_deaths, 0, 10)
-        difficulty_sim.input["completion_time"] = np.clip(level_time_sec, 0, 600)
+        difficulty_sim.input["health"] = clipped_health
+        difficulty_sim.input["deaths"] = clipped_deaths
+        difficulty_sim.input["completion_time"] = clipped_time
 
         difficulty_sim.compute()
 
-        damage_output = difficulty_sim.output.get("enemy_damage", 1.0)
-        health_output = difficulty_sim.output.get("enemy_health", 1.0)
+        # --- START DIAGNOSTIC PRINTS ---
+        print(f"Raw difficulty_sim.output dictionary: {difficulty_sim.output}")
+        # --- END DIAGNOSTIC PRINTS ---
+
+        # Retrieve with default, and then check if the key was actually present
+        # This helps differentiate between a computed 1.0 and a default 1.0
+        raw_damage_val = difficulty_sim.output.get("enemy_damage")
+        raw_health_val = difficulty_sim.output.get("enemy_health")
+
+        if raw_damage_val is not None:
+            damage_output = raw_damage_val
+            print(f"Raw 'enemy_damage' from output: {damage_output}")
+        else:
+            print(f"Warning: 'enemy_damage' key not found in fuzzy output. Defaulting to 1.0.")
+            damage_output = 1.0
+        
+        if raw_health_val is not None:
+            health_output = raw_health_val
+            print(f"Raw 'enemy_health' from output: {health_output}")
+        else:
+            print(f"Warning: 'enemy_health' key not found in fuzzy output. Defaulting to 1.0.")
+            health_output = 1.0
+
 
         if not np.isfinite(damage_output):
             print(f"Warning: Computed damage output is not finite ({damage_output}). Defaulting to 1.0.")
@@ -162,16 +198,26 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
         if not np.isfinite(health_output):
             print(f"Warning: Computed health output is not finite ({health_output}). Defaulting to 1.0.")
             health_output = 1.0
+        
+        # Ensure multipliers are not zero or negative, which could break game logic
+        damage_output = max(0.1, damage_output) # Minimum multiplier of 0.1
+        health_output = max(0.1, health_output) # Minimum multiplier of 0.1
 
-        return damage_output, health_output
 
     except KeyError as e:
-        print(f"Warning: Could not compute output for {e}. Rules might not cover this input combination.")
-        print(f"Inputs: health={player_health}, deaths={player_deaths}, time={level_time_sec}")
-        return 1.0, 1.0
+        print(f"Warning: Could not compute output due to KeyError: {e}. Rules might not cover this input combination or output variable name mismatch.")
+        print(f"Inputs were: health={clipped_health}, deaths={clipped_deaths}, time={clipped_time}")
+        # Keep default 1.0, 1.0
     except Exception as e:
         print(f"An unexpected error occurred during fuzzy computation: {e}")
-        return 1.0, 1.0
+        # Keep default 1.0, 1.0
+    
+    # --- START DIAGNOSTIC PRINTS ---
+    print(f"Final Multipliers Returned: DamageMult={damage_output:.2f}, HealthMult={health_output:.2f}")
+    print(f"--- Fuzzy Calculation End ---\n")
+    # --- END DIAGNOSTIC PRINTS ---
+
+    return damage_output, health_output
 
 # --- Example Usage ---
 if __name__ == "__main__":
@@ -180,49 +226,55 @@ if __name__ == "__main__":
         damage_mult, health_mult = check_DDA_adjust_difficulty(
             health_val, deaths_val, time_val
         )
-        print(f"Inputs: Health={health_val}, Deaths={deaths_val}, Time={time_val}s")
-        print(f"Output: Enemy Damage Multiplier: {damage_mult:.2f}")
-        print(f"Output: Enemy Health Multiplier: {health_mult:.2f}\n")
+        # The function now prints its own detailed logs, so we just call it.
+        # print(f"Inputs: Health={health_val}, Deaths={deaths_val}, Time={time_val}s")
+        # print(f"Output: Enemy Damage Multiplier: {damage_mult:.2f}")
+        # print(f"Output: Enemy Health Multiplier: {health_mult:.2f}\n")
 
     print("=== TESTING DYNAMIC DIFFICULTY ADJUSTMENT (3-Variable Rules) ===\n")
 
     # Test cases focusing on combinations of all three variables
 
     # Optimal Health Scenarios
-    run_test("Optimal Health, Few Deaths, Fast Time", 100, 1, 60)  # Expect increase, increase
-    run_test("Optimal Health, Few Deaths, Medium Time", 90, 2, 180) # Expect slight_increase, slight_increase
-    run_test("Optimal Health, Few Deaths, Slow Time", 80, 3, 350)   # Expect keep_same, slight_increase
+    run_test("Optimal Health, Few Deaths, Fast Time", 100, 1, 60)
+    run_test("Optimal Health, Few Deaths, Medium Time", 90, 2, 180)
+    run_test("Optimal Health, Few Deaths, Slow Time", 80, 3, 350)
 
-    run_test("Optimal Health, Moderate Deaths, Fast Time", 100, 5, 80) # Expect slight_increase, keep_same
-    run_test("Optimal Health, Moderate Deaths, Medium Time", 90, 6, 200) # Expect keep_same, keep_same
-    run_test("Optimal Health, Moderate Deaths, Slow Time", 80, 7, 400)  # Expect slight_decrease, keep_same
+    run_test("Optimal Health, Moderate Deaths, Fast Time", 100, 5, 80)
+    run_test("Optimal Health, Moderate Deaths, Medium Time", 90, 6, 200)
+    run_test("Optimal Health, Moderate Deaths, Slow Time", 80, 7, 400)
 
-    run_test("Optimal Health, Many Deaths, Fast Time", 100, 9, 100)  # Expect keep_same, slight_decrease
-    run_test("Optimal Health, Many Deaths, Medium Time", 90, 8, 300) # Expect slight_decrease, slight_decrease
-    run_test("Optimal Health, Many Deaths, Slow Time", 80, 10, 500)  # Expect decrease, decrease
+    run_test("Optimal Health, Many Deaths, Fast Time", 100, 9, 100)
+    run_test("Optimal Health, Many Deaths, Medium Time", 90, 8, 300)
+    run_test("Optimal Health, Many Deaths, Slow Time", 80, 10, 500)
 
     # Moderate Health Scenarios
-    run_test("Moderate Health, Few Deaths, Fast Time", 70, 1, 70)    # Expect slight_increase, slight_increase
-    run_test("Moderate Health, Few Deaths, Medium Time", 60, 2, 190)  # Expect keep_same, slight_increase
-    run_test("Moderate Health, Few Deaths, Slow Time", 50, 3, 360)   # Expect slight_decrease, keep_same
+    run_test("Moderate Health, Few Deaths, Fast Time", 70, 1, 70)
+    run_test("Moderate Health, Few Deaths, Medium Time", 60, 2, 190)
+    run_test("Moderate Health, Few Deaths, Slow Time", 50, 3, 360)
 
-    run_test("Moderate Health, Moderate Deaths, Fast Time", 70, 5, 85) # Expect keep_same, keep_same (very average but fast)
-    run_test("Moderate Health, Moderate Deaths, Medium Time", 60, 6, 250) # Expect keep_same, keep_same (quintessential average)
-    run_test("Moderate Health, Moderate Deaths, Slow Time", 50, 7, 420)  # Expect slight_decrease, slight_decrease
+    run_test("Moderate Health, Moderate Deaths, Fast Time", 70, 5, 85)
+    run_test("Moderate Health, Moderate Deaths, Medium Time", 60, 6, 250)
+    run_test("Moderate Health, Moderate Deaths, Slow Time", 50, 7, 420)
 
-    run_test("Moderate Health, Many Deaths, Fast Time", 70, 9, 110)  # Expect slight_decrease, decrease
-    run_test("Moderate Health, Many Deaths, Medium Time", 60, 8, 330) # Expect decrease, decrease
-    run_test("Moderate Health, Many Deaths, Slow Time", 50, 10, 550) # Expect decrease, decrease
+    run_test("Moderate Health, Many Deaths, Fast Time", 70, 9, 110)
+    run_test("Moderate Health, Many Deaths, Medium Time", 60, 8, 330)
+    run_test("Moderate Health, Many Deaths, Slow Time", 50, 10, 550)
 
     # Critical Health Scenarios (e.g., player died, health input is 0)
-    run_test("Critical Health (Death), Few Deaths, Fast Time", 0, 1, 50) # Expect decrease, slight_decrease
-    run_test("Critical Health (Death), Few Deaths, Medium Time", 0, 2, 170) # Expect decrease, decrease
-    run_test("Critical Health (Death), Few Deaths, Slow Time", 0, 3, 320)   # Expect decrease, decrease
+    run_test("Critical Health (Death), Few Deaths, Fast Time", 0, 1, 50)
+    run_test("Critical Health (Death), Few Deaths, Medium Time", 0, 2, 170)
+    run_test("Critical Health (Death), Few Deaths, Slow Time", 0, 3, 320)
 
-    run_test("Critical Health (Death), Moderate Deaths, Fast Time", 0, 5, 70) # Expect decrease, decrease
-    run_test("Critical Health (Death), Moderate Deaths, Medium Time", 0, 6, 220) # Expect decrease, decrease
-    run_test("Critical Health (Death), Moderate Deaths, Slow Time", 0, 7, 400)  # Expect decrease, decrease
+    run_test("Critical Health (Death), Moderate Deaths, Fast Time", 0, 5, 70)
+    run_test("Critical Health (Death), Moderate Deaths, Medium Time", 0, 6, 220)
+    run_test("Critical Health (Death), Moderate Deaths, Slow Time", 0, 7, 400)
 
-    run_test("Critical Health (Death), Many Deaths, Fast Time", 0, 9, 90)    # Expect decrease, decrease (max help)
-    run_test("Critical Health (Death), Many Deaths, Medium Time", 0, 8, 280)  # Expect decrease, decrease (max help)
-    run_test("Critical Health (Death), Many Deaths, Slow Time", 0, 10, 500)  # Expect decrease, decrease (max help)
+    run_test("Critical Health (Death), Many Deaths, Fast Time", 0, 9, 90)
+    run_test("Critical Health (Death), Many Deaths, Medium Time", 0, 8, 280)
+    run_test("Critical Health (Death), Many Deaths, Slow Time", 0, 10, 500)
+
+    # Test with very low time, which previously might have caused issues
+    run_test("Optimal Health, Few Deaths, Very Fast Time", 80, 0, 1.5)
+    run_test("Moderate Health, Few Deaths, Very Fast Time", 70, 0, 5)
+    run_test("Critical Health, Few Deaths, Very Fast Time", 20, 0, 10)
