@@ -102,7 +102,7 @@ class Player(Camera):
             game_logger.log_death(
                 runtime_game_stats.get_health(),  # This will be 0
                 runtime_game_stats.get_deaths(),
-                level_duration.get_duration(),
+                total_duration.get_duration(),
                 self.damage_mult,  # Multiplier active during the life that ended
                 self.health_mult,  # Multiplier active during the life that ended
             )
@@ -236,7 +236,7 @@ class Player(Camera):
             game_logger.log_level_complete(
                 runtime_game_stats.get_health(),
                 runtime_game_stats.get_deaths(),  # Deaths accumulated in this level
-                level_duration.get_duration(),
+                total_duration.get_duration(),
                 self.damage_mult,  # Multipliers active for this level
                 self.health_mult,
             )
@@ -295,7 +295,7 @@ class Player(Camera):
             game_logger.log_open_door(
                 runtime_game_stats.get_health(),
                 runtime_game_stats.get_deaths(),  # Deaths accumulated in this level
-                level_duration.get_duration(),
+                total_duration.get_duration(),
                 new_damage_mult,  # Multipliers active for this level
                 new_health_mult,
             )
