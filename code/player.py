@@ -94,7 +94,6 @@ class Player(Camera):
         if self.health <= 0:
             self.play(self.sound.player_death)
             runtime_game_stats.increment_death()
-            runtime_game_stats.set_time(total_duration.get_duration())
             runtime_game_stats.set_health(
                 0
             )  # Health at the moment of death for DDA calculation
@@ -103,7 +102,7 @@ class Player(Camera):
             game_logger.log_death(
                 runtime_game_stats.get_health(),  # This will be 0
                 runtime_game_stats.get_deaths(),
-                runtime_game_stats.get_time(),
+                level_duration.get_duration(),
                 self.damage_mult,  # Multiplier active during the life that ended
                 self.health_mult,  # Multiplier active during the life that ended
             )
@@ -113,7 +112,7 @@ class Player(Camera):
                 fuzzy_controller.check_DDA_adjust_difficulty(
                     runtime_game_stats.get_health(),  # Health is 0
                     runtime_game_stats.get_deaths(),  # Current accumulated deaths for this level/session
-                    runtime_game_stats.get_time(),  # Time taken for this attempt
+                    total_duration.get_duration(),  # Time taken for this session
                 )
             )
 
@@ -232,15 +231,12 @@ class Player(Camera):
             pg.time.wait(300)
 
             runtime_game_stats.set_health(self.health)  # Health at level end
-            runtime_game_stats.set_time(
-                total_duration.get_duration()
-            )  # Time for this level
 
             # Log level completion with multipliers active during this level
             game_logger.log_level_complete(
                 runtime_game_stats.get_health(),
                 runtime_game_stats.get_deaths(),  # Deaths accumulated in this level
-                runtime_game_stats.get_time(),
+                level_duration.get_duration(),
                 self.damage_mult,  # Multipliers active for this level
                 self.health_mult,
             )
@@ -251,7 +247,7 @@ class Player(Camera):
                 fuzzy_controller.check_DDA_adjust_difficulty(
                     runtime_game_stats.get_health(),
                     runtime_game_stats.get_deaths(),
-                    runtime_game_stats.get_time(),
+                    total_duration.get_duration(),
                 )
             )
 
