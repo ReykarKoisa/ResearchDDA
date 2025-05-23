@@ -221,7 +221,7 @@ class Player(Camera):
             return None
 
         door = self.door_map[int_pos]
-        #
+        
         if self.key and door.tex_id == ID.KEY_DOOR:
             #
             door.is_closed = not door.is_closed
@@ -281,6 +281,36 @@ class Player(Camera):
                 self.eng.new_game()
                 level_duration.start()
         else:
+
+            runtime_game_stats.set_health(self.health)
+
+            new_damage_mult, new_health_mult = (
+                fuzzy_controller.check_DDA_adjust_difficulty(
+                    runtime_game_stats.get_health(),
+                    runtime_game_stats.get_deaths(),
+                    total_duration.get_duration(),
+                )
+            )
+
+            game_logger.log_open_door(
+                runtime_game_stats.get_health(),
+                runtime_game_stats.get_deaths(),  # Deaths accumulated in this level
+                level_duration.get_duration(),
+                new_damage_mult,  # Multipliers active for this level
+                new_health_mult,
+            )
+
+            # Update player_attribs that will carry over to the new Player instance in new_game()
+            self.eng.player_attribs.update(
+                player=self
+            )  # Saves current health, ammo, weapons, AND existing mults
+            self.eng.player_attribs.damage_mult = (
+                new_damage_mult  # Overwrite with NEW mults for next level
+            )
+            self.eng.player_attribs.health_mult = (
+                new_health_mult  # Overwrite with NEW mults for next level
+            )
+
             door.is_moving = True
             self.play(self.sound.open_door)
 
