@@ -13,8 +13,8 @@ completion_time = ctrl.Antecedent(np.arange(0, 601, 1), "completion_time")
 # Define output variables (enemy adjustment multipliers)
 #enemy_damage = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_damage")
 #enemy_health = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_health")
-enemy_damage = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_damage", defuzzify_method='bisector') # Try 'bisector'
-enemy_health = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_health", defuzzify_method='bisector') # Try 'bisector'
+enemy_damage = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_damage")
+enemy_health = ctrl.Consequent(np.arange(0.3, 1.81, 0.01), "enemy_health")
 
 # --- Membership Functions for Inputs ---
 # Health: Lower is worse, higher is better.
