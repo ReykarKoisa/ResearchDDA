@@ -311,6 +311,9 @@ class Player(Camera):
                 new_health_mult  # Overwrite with NEW mults for next level
             )
 
+            self.damage_mult = new_damage_mult
+            self.health_mult = new_health_mult
+
             door.is_moving = True
             self.play(self.sound.open_door)
 
