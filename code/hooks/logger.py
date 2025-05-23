@@ -65,6 +65,22 @@ class GameLogger:
             f"HealthMult: {health_mult} | DamageMult: {damage_mult}"
         )
 
+
+    
+    def log_open_door(
+        self,
+        health: float,
+        deaths: int,
+        time_taken: float,
+        health_mult: float,
+        damage_mult: float,
+    ):
+        self.logger.info(
+            f"Event: DoorInteracted | Participant: {self.current_participant} | "
+            f"Health: {health} | Deaths: {deaths} | TimeTaken: {time_taken} | "
+            f"HealthMult: {health_mult} | DamageMult: {damage_mult}"
+        )
+
     def log_total_duration(self, total_duration: float):
         """Log the total duration of the game session for the current participant."""
         self.logger.info(f"Total_duration: {total_duration}")
