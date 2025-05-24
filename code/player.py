@@ -114,7 +114,7 @@ class Player(Camera):
                     runtime_game_stats.get_deaths(),  # Current accumulated deaths for this level/session
                     total_duration.get_duration(),  # Time taken for this session
                 )
-            )
+            ) if DDA_ON else (1.0, 1.0)
 
             pg.time.wait(2000)
 
@@ -249,7 +249,7 @@ class Player(Camera):
                     runtime_game_stats.get_deaths(),
                     total_duration.get_duration(),
                 )
-            )
+            ) if DDA_ON else (1.0, 1.0)
 
             # Update player_attribs that will carry over to the new Player instance in new_game()
             self.eng.player_attribs.update(
@@ -290,7 +290,7 @@ class Player(Camera):
                     runtime_game_stats.get_deaths(),
                     total_duration.get_duration(),
                 )
-            )
+            ) if DDA_ON else (1.0, 1.0)
 
             game_logger.log_open_door(
                 runtime_game_stats.get_health(),
