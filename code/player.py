@@ -109,10 +109,11 @@ class Player(Camera):
 
             # Calculate new DDA multipliers based on this death's performance
             new_damage_mult, new_health_mult = (
-                fuzzy_controller.check_DDA_adjust_difficulty(
+                fuzzy_controller.check_DDA_adjust_difficulty_capped(
                     runtime_game_stats.get_health(),  # Health is 0
                     runtime_game_stats.get_deaths(),  # Current accumulated deaths for this level/session
                     total_duration.get_duration(),  # Time taken for this session
+                    self.eng.player_attribs.num_level
                 )
             ) if DDA_ON else (1.0, 1.0)
 
@@ -244,10 +245,11 @@ class Player(Camera):
 
             # Calculate DDA multipliers for the NEXT level
             new_damage_mult, new_health_mult = (
-                fuzzy_controller.check_DDA_adjust_difficulty(
+                fuzzy_controller.check_DDA_adjust_difficulty_capped(
                     runtime_game_stats.get_health(),
                     runtime_game_stats.get_deaths(),
                     total_duration.get_duration(),
+                    self.eng.player_attribs.num_level
                 )
             ) if DDA_ON else (1.0, 1.0)
 
@@ -285,10 +287,11 @@ class Player(Camera):
             runtime_game_stats.set_health(self.health)
 
             new_damage_mult, new_health_mult = (
-                fuzzy_controller.check_DDA_adjust_difficulty(
+                fuzzy_controller.check_DDA_adjust_difficulty_capped(
                     runtime_game_stats.get_health(),
                     runtime_game_stats.get_deaths(),
                     total_duration.get_duration(),
+                    self.eng.player_attribs.num_level
                 )
             ) if DDA_ON else (1.0, 1.0)
 
