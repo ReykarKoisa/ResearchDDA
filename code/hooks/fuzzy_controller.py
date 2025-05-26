@@ -2,46 +2,38 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 
-# Define input variables
-# Player health at the end of the level (0-100)
 health = ctrl.Antecedent(np.arange(0, 101, 1), "health")
-# Number of times the player died during the level (0-10)
+
 deaths = ctrl.Antecedent(np.arange(0, 11, 1), "deaths")
-# Time taken to complete the level in seconds (0-600)
+
 completion_time = ctrl.Antecedent(np.arange(0, 601, 1), "completion_time")
 
-# Define output variables (enemy adjustment multipliers)
-# Extended range to allow for more aggressive increases
+
 enemy_damage = ctrl.Consequent(np.arange(0.3, 2.01, 0.01), "enemy_damage")
 enemy_health = ctrl.Consequent(np.arange(0.3, 2.01, 0.01), "enemy_health")
 
-# --- Membership Functions for Inputs ---
-# Health: Lower is worse, higher is better.
 health["critical"] = fuzz.trapmf(health.universe, [0, 0, 15, 50])
 health["moderate"] = fuzz.trimf(health.universe, [20, 50, 75])
 health["optimal"] = fuzz.trapmf(health.universe, [50, 75, 100, 100])
 
-# Deaths: Lower is better, higher is worse.
-# Refined to better distinguish exceptional performance (0-1 deaths)
-deaths["exceptional"] = fuzz.trapmf(deaths.universe, [0, 0, 1, 2])  # New category
+
+deaths["exceptional"] = fuzz.trapmf(deaths.universe, [0, 0, 1, 2])  
 deaths["few"] = fuzz.trimf(deaths.universe, [1, 3, 5])
 deaths["moderate"] = fuzz.trimf(deaths.universe, [3, 6, 8])
 deaths["many"] = fuzz.trapmf(deaths.universe, [6, 10, 10, 10])
 
-# Completion Time: Lower (faster) is generally better.
-# Refined to better distinguish exceptional speed
+
 completion_time["exceptional"] = fuzz.trapmf(
     completion_time.universe, [0, 0, 30, 90]
-)  # New category for very fast
+)  
 completion_time["fast"] = fuzz.trimf(completion_time.universe, [60, 120, 180])
 completion_time["medium"] = fuzz.trimf(completion_time.universe, [150, 300, 450])
 completion_time["slow"] = fuzz.trapmf(completion_time.universe, [350, 480, 600, 600])
 
-# --- Membership Functions for Outputs ---
-# Extended output categories for more aggressive adjustments
+
 enemy_damage["major_decrease"] = fuzz.trimf(
     enemy_damage.universe, [0.3, 0.4, 0.55]
-)  # New
+)  
 enemy_damage["decrease"] = fuzz.trimf(enemy_damage.universe, [0.45, 0.6, 0.75])
 enemy_damage["slight_decrease"] = fuzz.trimf(
     enemy_damage.universe, [0.65, 0.8, 0.95]
@@ -53,11 +45,11 @@ enemy_damage["slight_increase"] = fuzz.trimf(
 enemy_damage["increase"] = fuzz.trimf(enemy_damage.universe, [1.3, 1.55, 1.8])
 enemy_damage["major_increase"] = fuzz.trimf(
     enemy_damage.universe, [1.7, 1.85, 2.0]
-)  # New
+)  
 
 enemy_health["major_decrease"] = fuzz.trimf(
     enemy_health.universe, [0.3, 0.4, 0.55]
-)  # New
+)  
 enemy_health["decrease"] = fuzz.trimf(enemy_health.universe, [0.45, 0.6, 0.75])
 enemy_health["slight_decrease"] = fuzz.trimf(
     enemy_health.universe, [0.65, 0.8, 0.95]
@@ -69,10 +61,9 @@ enemy_health["slight_increase"] = fuzz.trimf(
 enemy_health["increase"] = fuzz.trimf(enemy_health.universe, [1.3, 1.55, 1.8])
 enemy_health["major_increase"] = fuzz.trimf(
     enemy_health.universe, [1.7, 1.85, 2.0]
-)  # New
+)  
 
-# --- Enhanced Fuzzy Rules ---
-# Category I: Exceptional Performance (Optimal Health + Exceptional Deaths/Time)
+
 r01_OptH_ExcD_ExcT = ctrl.Rule(
     health["optimal"] & deaths["exceptional"] & completion_time["exceptional"],
     [enemy_damage["major_increase"], enemy_health["major_increase"]],
@@ -83,21 +74,20 @@ r02_OptH_ExcD_FastT = ctrl.Rule(
 )
 r03_OptH_FewD_ExcT = ctrl.Rule(
     health["optimal"] & deaths["few"] & completion_time["exceptional"],
-    [enemy_damage["increase"], enemy_health["increase"]],
+    [enemy_damage["increase"], enemy_health["major_increase"]],
 )
 
-# Category II: High Performance (Optimal Health combinations)
 r04_OptH_ExcD_MedT = ctrl.Rule(
     health["optimal"] & deaths["exceptional"] & completion_time["medium"],
     [enemy_damage["slight_increase"], enemy_health["increase"]],
 )
 r05_OptH_ExcD_SlowT = ctrl.Rule(
     health["optimal"] & deaths["exceptional"] & completion_time["slow"],
-    [enemy_damage["keep_same"], enemy_health["slight_increase"]],
+    [enemy_damage["keep_same"], enemy_health["slight_decrease"]],
 )
 r06_OptH_FewD_FastT = ctrl.Rule(
     health["optimal"] & deaths["few"] & completion_time["fast"],
-    [enemy_damage["increase"], enemy_health["slight_increase"]],
+    [enemy_damage["increase"], enemy_health["increase"]],
 )
 r07_OptH_FewD_MedT = ctrl.Rule(
     health["optimal"] & deaths["few"] & completion_time["medium"],
@@ -105,10 +95,9 @@ r07_OptH_FewD_MedT = ctrl.Rule(
 )
 r08_OptH_FewD_SlowT = ctrl.Rule(
     health["optimal"] & deaths["few"] & completion_time["slow"],
-    [enemy_damage["keep_same"], enemy_health["keep_same"]],
+    [enemy_damage["slight_decrease"], enemy_health["slight_decrease"]],
 )
 
-# Category III: Moderate Performance (Optimal Health + Moderate/Many Deaths)
 r09_OptH_ModD_ExcT = ctrl.Rule(
     health["optimal"] & deaths["moderate"] & completion_time["exceptional"],
     [enemy_damage["slight_increase"], enemy_health["increase"]],
@@ -123,7 +112,7 @@ r11_OptH_ModD_MedT = ctrl.Rule(
 )
 r12_OptH_ModD_SlowT = ctrl.Rule(
     health["optimal"] & deaths["moderate"] & completion_time["slow"],
-    [enemy_damage["slight_decrease"], enemy_health["keep_same"]],
+    [enemy_damage["slight_decrease"], enemy_health["decrease"]],
 )
 r13_OptH_ManyD_ExcT = ctrl.Rule(
     health["optimal"] & deaths["many"] & completion_time["exceptional"],
@@ -142,7 +131,6 @@ r16_OptH_ManyD_SlowT = ctrl.Rule(
     [enemy_damage["decrease"], enemy_health["decrease"]],
 )
 
-# Category IV: Moderate Health Performance
 r17_ModH_ExcD_ExcT = ctrl.Rule(
     health["moderate"] & deaths["exceptional"] & completion_time["exceptional"],
     [enemy_damage["increase"], enemy_health["increase"]],
@@ -161,7 +149,7 @@ r20_ModH_ExcD_MedT = ctrl.Rule(
 )
 r21_ModH_ExcD_SlowT = ctrl.Rule(
     health["moderate"] & deaths["exceptional"] & completion_time["slow"],
-    [enemy_damage["slight_decrease"], enemy_health["keep_same"]],
+    [enemy_damage["slight_decrease"], enemy_health["slight_decrease"]],
 )
 r22_ModH_FewD_FastT = ctrl.Rule(
     health["moderate"] & deaths["few"] & completion_time["fast"],
@@ -173,7 +161,7 @@ r23_ModH_FewD_MedT = ctrl.Rule(
 )
 r24_ModH_FewD_SlowT = ctrl.Rule(
     health["moderate"] & deaths["few"] & completion_time["slow"],
-    [enemy_damage["slight_decrease"], enemy_health["slight_decrease"]],
+    [enemy_damage["decrease"], enemy_health["slight_decrease"]],
 )
 r25_ModH_ModD_ExcT = ctrl.Rule(
     health["moderate"] & deaths["moderate"] & completion_time["exceptional"],
@@ -208,7 +196,7 @@ r32_ModH_ManyD_SlowT = ctrl.Rule(
     [enemy_damage["major_decrease"], enemy_health["decrease"]],
 )
 
-# Category V: Critical Health (Player struggling significantly)
+
 r33_CritH_ExcD_ExcT = ctrl.Rule(
     health["critical"] & deaths["exceptional"] & completion_time["exceptional"],
     [enemy_damage["increase"], enemy_health["increase"]],
@@ -239,7 +227,7 @@ r39_CritH_FewD_MedT = ctrl.Rule(
 )
 r40_CritH_FewD_SlowT = ctrl.Rule(
     health["critical"] & deaths["few"] & completion_time["slow"],
-    [enemy_damage["major_decrease"], enemy_health["major_decrease"]],
+    [enemy_damage["decrease"], enemy_health["major_decrease"]],
 )
 r41_CritH_ModD_ExcT = ctrl.Rule(
     health["critical"] & deaths["moderate"] & completion_time["exceptional"],
@@ -274,7 +262,7 @@ r48_CritH_ManyD_SlowT = ctrl.Rule(
     [enemy_damage["major_decrease"], enemy_health["major_decrease"]],
 )
 
-# --- Control System Creation ---
+
 difficulty_ctrl = ctrl.ControlSystem(
     [
         r01_OptH_ExcD_ExcT,
@@ -342,8 +330,8 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
     Returns:
       - tuple (float, float): (enemy_damage_multiplier, enemy_health_multiplier)
     """
-    damage_output = 1.0  # Default to 1.0
-    health_output = 1.0  # Default to 1.0
+    damage_output = 1.0  
+    health_output = 1.0  
 
     # --- START DIAGNOSTIC PRINTS ---
     print(f"\n--- Enhanced Fuzzy Calculation Start ---")
@@ -404,9 +392,9 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
             )
             health_output = 1.0
 
-        # Ensure multipliers are not zero or negative, which could break game logic
-        damage_output = max(0.1, damage_output)  # Minimum multiplier of 0.1
-        health_output = max(0.1, health_output)  # Minimum multiplier of 0.1
+        
+        damage_output = max(0.1, damage_output)  
+        health_output = max(0.1, health_output)  
 
     except KeyError as e:
         print(
@@ -415,10 +403,10 @@ def check_DDA_adjust_difficulty(player_health, player_deaths, level_time_sec):
         print(
             f"Inputs were: health={clipped_health}, deaths={clipped_deaths}, time={clipped_time}"
         )
-        # Keep default 1.0, 1.0
+        
     except Exception as e:
         print(f"An unexpected error occurred during fuzzy computation: {e}")
-        # Keep default 1.0, 1.0
+       
 
     # --- START DIAGNOSTIC PRINTS ---
     print(
@@ -443,9 +431,7 @@ def check_DDA_adjust_difficulty_capped(player_health, player_deaths, level_time_
     
     return damage_mult, health_mult
 
-# Usage in your game:
-# For early levels, use max_increase=0.2 (20% max increase)
-# For later levels, gradually increase the cap or remove it entirely
+
 
 
 # --- Example Usage ---
