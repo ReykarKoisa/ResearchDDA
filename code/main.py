@@ -2,6 +2,8 @@ import sys
 import moderngl as mgl
 from engine import Engine
 from settings import *
+import pygame as pg
+from hook_objects import level_duration, total_duration, game_logger
 
 
 class Game:

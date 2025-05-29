@@ -1,10 +1,13 @@
 from itertools import cycle
 from camera import Camera
 from settings import *
-import fuzzy_controller
+import hooks.fuzzy_controller as fuzzy_controller
+from hook_objects import level_duration, total_duration, game_logger, runtime_game_stats
 import random
 import sys
 import pygame as pg
+from typing import Tuple
+
 
 class PlayerAttribs:
     def __init__(self):
@@ -15,7 +18,6 @@ class PlayerAttribs:
         self.num_level = 0
         self.damage_mult = 1.0
         self.health_mult = 1.0
-        
 
     def update(self, player):
         self.health = player.health
@@ -92,44 +94,56 @@ class Player(Camera):
         if self.health <= 0:
             self.play(self.sound.player_death)
             runtime_game_stats.increment_death()
-            runtime_game_stats.set_time(level_duration.get_duration())
-            runtime_game_stats.set_health(0) # Health at the moment of death for DDA calculation
+            runtime_game_stats.set_health(
+                0
+            )  # Health at the moment of death for DDA calculation
 
             # Log with the multipliers that were active for THE LIFE THAT JUST ENDED
             game_logger.log_death(
-                runtime_game_stats.get_health(), # This will be 0
+                runtime_game_stats.get_health(),  # This will be 0
                 runtime_game_stats.get_deaths(),
-                runtime_game_stats.get_time(),
-                self.damage_mult, # Multiplier active during the life that ended
-                self.health_mult  # Multiplier active during the life that ended
+                total_duration.get_duration(),
+                self.damage_mult,  # Multiplier active during the life that ended
+                self.health_mult,  # Multiplier active during the life that ended
             )
 
             # Calculate new DDA multipliers based on this death's performance
-            new_damage_mult, new_health_mult = fuzzy_controller.check_DDA_adjust_difficulty(
-                runtime_game_stats.get_health(), # Health is 0
-                runtime_game_stats.get_deaths(), # Current accumulated deaths for this level/session
-                runtime_game_stats.get_time()    # Time taken for this attempt
-            )
+            new_damage_mult, new_health_mult = (
+                fuzzy_controller.check_DDA_adjust_difficulty_capped(
+                    runtime_game_stats.get_health(),  # Health is 0
+                    runtime_game_stats.get_deaths(),  # Current accumulated deaths for this level/session
+                    total_duration.get_duration(),  # Time taken for this session
+                    self.eng.player_attribs.num_level
+                )
+            ) if DDA_ON else (1.0, 1.0)
 
             pg.time.wait(2000)
 
             # Update the *existing* (persistent) player_attribs in the engine
             # These will be used by the new Player instance created in new_game()
-            self.eng.player_attribs.health = PLAYER_INIT_HEALTH # Reset health for the next life
-            self.eng.player_attribs.ammo = PLAYER_INIT_AMMO     # Reset ammo for the next life
+            self.eng.player_attribs.health = (
+                PLAYER_INIT_HEALTH  # Reset health for the next life
+            )
+            self.eng.player_attribs.ammo = (
+                PLAYER_INIT_AMMO  # Reset ammo for the next life
+            )
             # Note: weapons, num_level are not reset by creating a new PlayerAttribs() anymore.
             # They persist or are handled by level completion logic.
 
-            self.eng.player_attribs.damage_mult = new_damage_mult # Store the NEWLY calculated multiplier
-            self.eng.player_attribs.health_mult = new_health_mult # Store the NEWLY calculated multiplier
-            
+            self.eng.player_attribs.damage_mult = (
+                new_damage_mult  # Store the NEWLY calculated multiplier
+            )
+            self.eng.player_attribs.health_mult = (
+                new_health_mult  # Store the NEWLY calculated multiplier
+            )
+
             # Reset runtime_game_stats for the next attempt if DDA considers per-life stats
             # or let them accumulate if DDA considers stats over multiple lives in a level.
             # For simplicity, we assume runtime_game_stats.deaths might accumulate until level complete.
             # runtime_game_stats.time is reset by level_duration.start() in new_game or level_complete
 
-            self.eng.new_game() # This will create a new Player instance which now reads
-                                # the updated multipliers from self.eng.player_attribs
+            self.eng.new_game()  # This will create a new Player instance which now reads
+            # the updated multipliers from self.eng.player_attribs
 
     def check_hit_on_npc(self):
         if WEAPON_SETTINGS[self.weapon_id]["miss_probability"] > random.random():
@@ -208,7 +222,7 @@ class Player(Camera):
             return None
 
         door = self.door_map[int_pos]
-        #
+        
         if self.key and door.tex_id == ID.KEY_DOOR:
             #
             door.is_closed = not door.is_closed
@@ -216,55 +230,93 @@ class Player(Camera):
             # next level
             level_duration.stop()
             pg.time.wait(300)
-            
-            runtime_game_stats.set_health(self.health) # Health at level end
-            runtime_game_stats.set_time(level_duration.get_duration()) # Time for this level
+
+            runtime_game_stats.set_health(self.health)  # Health at level end
 
             # Log level completion with multipliers active during this level
             game_logger.log_level_complete(
                 runtime_game_stats.get_health(),
-                runtime_game_stats.get_deaths(), # Deaths accumulated in this level
-                runtime_game_stats.get_time(),
-                self.damage_mult, # Multipliers active for this level
-                self.health_mult
+                runtime_game_stats.get_deaths(),  # Deaths accumulated in this level
+                total_duration.get_duration(),
+                self.damage_mult,  # Multipliers active for this level
+                self.health_mult,
             )
             # level_duration.start() # This will be handled by new_game() implicitly if it's there or needs explicit call
 
             # Calculate DDA multipliers for the NEXT level
-            new_damage_mult, new_health_mult = fuzzy_controller.check_DDA_adjust_difficulty(
-                runtime_game_stats.get_health(),
-                runtime_game_stats.get_deaths(),
-                runtime_game_stats.get_time()
-            )
+            new_damage_mult, new_health_mult = (
+                fuzzy_controller.check_DDA_adjust_difficulty_capped(
+                    runtime_game_stats.get_health(),
+                    runtime_game_stats.get_deaths(),
+                    total_duration.get_duration(),
+                    self.eng.player_attribs.num_level
+                )
+            ) if DDA_ON else (1.0, 1.0)
 
             # Update player_attribs that will carry over to the new Player instance in new_game()
-            self.eng.player_attribs.update(player=self) # Saves current health, ammo, weapons, AND existing mults
-            self.eng.player_attribs.damage_mult = new_damage_mult # Overwrite with NEW mults for next level
-            self.eng.player_attribs.health_mult = new_health_mult # Overwrite with NEW mults for next level
+            self.eng.player_attribs.update(
+                player=self
+            )  # Saves current health, ammo, weapons, AND existing mults
+            self.eng.player_attribs.damage_mult = (
+                new_damage_mult  # Overwrite with NEW mults for next level
+            )
+            self.eng.player_attribs.health_mult = (
+                new_health_mult  # Overwrite with NEW mults for next level
+            )
 
-            self.eng.player_attribs.num_level += 1
-            self.eng.player_attribs.num_level %= NUM_LEVELS
-            
-            # Reset per-level stats in runtime_game_stats for the new level
-            runtime_game_stats.deaths = 0 # Reset deaths for the new level
+            self.eng.player_attribs.num_level += 1  # Increment to signify completion of current level / moving to next
 
+            # Check if the incremented level count means all levels are done
             if self.eng.player_attribs.num_level == NUM_LEVELS:
                 # All levels completed
                 print("All levels completed! Exiting game.")
-                # Ensure final logs are written if any (total_duration is handled in main.py run())
-                # self.app.is_running = False # This will signal the main loop in main.py to terminate
-
-                # More direct exit after logging
                 total_duration.stop()
-                level_duration.stop() # Ensure this is also stopped
+                level_duration.stop()  # Ensure this is also stopped
                 game_logger.log_total_duration(total_duration.get_duration())
                 pg.quit()
                 sys.exit()
             else:
                 # Not the last level, continue to the next level
-                self.eng.player_attribs.num_level %= NUM_LEVELS # Apply modulo for standard level looping if not exiting
+                # Apply modulo for standard level looping if not exiting
+                # This ensures num_level wraps around correctly for the next level.
+                self.eng.player_attribs.num_level %= NUM_LEVELS
                 self.eng.new_game()
+                level_duration.start()
         else:
+
+            runtime_game_stats.set_health(self.health)
+
+            new_damage_mult, new_health_mult = (
+                fuzzy_controller.check_DDA_adjust_difficulty_capped(
+                    runtime_game_stats.get_health(),
+                    runtime_game_stats.get_deaths(),
+                    total_duration.get_duration(),
+                    self.eng.player_attribs.num_level
+                )
+            ) if DDA_ON else (1.0, 1.0)
+
+            game_logger.log_open_door(
+                runtime_game_stats.get_health(),
+                runtime_game_stats.get_deaths(),  # Deaths accumulated in this level
+                total_duration.get_duration(),
+                new_damage_mult,  # Multipliers active for this level
+                new_health_mult,
+            )
+
+            # Update player_attribs that will carry over to the new Player instance in new_game()
+            self.eng.player_attribs.update(
+                player=self
+            )  # Saves current health, ammo, weapons, AND existing mults
+            self.eng.player_attribs.damage_mult = (
+                new_damage_mult  # Overwrite with NEW mults for next level
+            )
+            self.eng.player_attribs.health_mult = (
+                new_health_mult  # Overwrite with NEW mults for next level
+            )
+
+            self.damage_mult = new_damage_mult
+            self.health_mult = new_health_mult
+
             door.is_moving = True
             self.play(self.sound.open_door)
 
